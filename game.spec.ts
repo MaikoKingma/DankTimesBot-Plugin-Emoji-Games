@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import { User } from "../../src/chat/user/user";
-import { Game, GameState } from "./game";
+import { Game } from "./games";
 import { DiceMock, MessageMock } from "./message-mock";
 
 describe("Game", () => {
@@ -20,7 +20,6 @@ describe("Game", () => {
         successMsg.dice.emoji = "⚽️";
         successMsg.dice.value = 4;
         game.HandleMessage(failedMsg, user1);
-        assert.equal(game.GameState, GameState.Started);
         game.HandleMessage(failedMsg, user2);
         assert.equal(game.round, 1);
         game.HandleMessage(successMsg, user1);
@@ -35,7 +34,5 @@ describe("Game", () => {
         game.HandleMessage(failedMsg, user1);
         game.HandleMessage(successMsg, user2);
         assert.equal(game.round, 5);
-        assert.equal(game.GameState, GameState.Ended);
-        console.log(game.GetResults());
     });
 });
