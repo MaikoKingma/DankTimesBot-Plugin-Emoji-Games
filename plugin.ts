@@ -67,7 +67,7 @@ export class Plugin extends AbstractPlugin {
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        return "A variaty of games played with emoji's\n\n"
+        return "A variety of games played with emoji's\n\n"
             + `/${Plugin.CHOOSE_GAME_CMD} [(optional)GameName|GameEmoji]\n`
             + `/${Plugin.JOIN_GAME_CMD}\n`
             + `/${Plugin.CANCEL_GAME_CMD}\n\n`
