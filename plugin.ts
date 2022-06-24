@@ -37,10 +37,9 @@ export class Plugin extends AbstractPlugin {
                 this.waitingForResponse = undefined;
                 if (!data.msg.text)
                     return;
-                const gameId = parseInt(data.msg.text);
-                if (gameId >= 0 && gameId < this.availableGames.length) {
-                    data.botReplies = data.botReplies.concat(this.initiateGame(this.availableGames[gameId], data.user))
-                }
+                const gameTemplate = this.selectGameByIndex(data.msg.text);
+                if (gameTemplate)
+                    data.botReplies = data.botReplies.concat(this.initiateGame(gameTemplate, data.user));
             } else if (this.isGameRunning()) {
                 data.botReplies = data.botReplies.concat(this.currentGame!.HandleMessage(data.msg, data.user));
             }
@@ -68,7 +67,7 @@ export class Plugin extends AbstractPlugin {
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return "A variety of games played with emoji's\n\n"
-            + `/${Plugin.CHOOSE_GAME_CMD} [(optional)GameName|GameEmoji]\n`
+            + `/${Plugin.CHOOSE_GAME_CMD} [(optional)GameName|GameEmoji|GameIndex]\n`
             + `/${Plugin.JOIN_GAME_CMD}\n`
             + `/${Plugin.CANCEL_GAME_CMD}\n\n`
             + this.availableGames.map((game) => game.GetInfo()).join("\n\n");
@@ -78,14 +77,25 @@ export class Plugin extends AbstractPlugin {
         if (this.isGameRunning())
             return "";
         if (msg.text) {
-            var game = this.availableGames.find((game) => game.IdentifyGame(msg.text!));
-            if (game) {
-                return this.initiateGame(game, user);
+            const msgText = msg.text!.replace("/" + Plugin.CHOOSE_GAME_CMD, "").trim();
+            let gameTemplate = this.selectGameByIndex(msgText);
+            if (!gameTemplate)
+                gameTemplate = this.availableGames.find((game) => game.IdentifyGame(msgText));
+            if (gameTemplate) {
+                return this.initiateGame(gameTemplate, user);
             }
         }
         
         this.waitingForResponse = user.id;
         return this.availableGames.map((game, index) => `[${index}] ${game.FullName}`).join("\n");
+    }
+
+    private selectGameByIndex(msgText: string): GameTemplate | undefined {
+        const gameId = parseInt(msgText);
+        if (gameId >= 0 && gameId < this.availableGames.length) {
+            return this.availableGames[gameId];
+        }
+        return undefined;
     }
 
     private joinGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
