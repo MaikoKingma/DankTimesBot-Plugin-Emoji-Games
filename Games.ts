@@ -44,14 +44,25 @@ export class Game extends GameIdentifier {
     public HandleMessage(msg: Message, user: User): string {
         if (user.id === this.players[this.nextPlayer].id && msg.dice && msg.dice.emoji === this.emoji) {
             this.shoot(msg.dice.value);
+            const playerRanking = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? 1 : -1);
+            const leaderboard = this.formatLeaderboard(playerRanking);
             if (this.hasGameEnded()) {
-                const leaderboard = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? 1 : -1);
-                return `Congratulations ${leaderboard[0].name} won this game of ${this.FullName}\n\n${leaderboard.map((player, index) => `${index + 1}. ${player.name}\n`)}`;
+                return `Congratulations ${playerRanking[0].name} won this game of ${this.FullName}\n\n${this.setMedals(leaderboard)}`;
             } else {
-                return `Round: ${this.round}/${this.maxRounds}\nUp next: ${this.players[this.nextPlayer].name}`;
+                return `Round: ${this.round}/${this.maxRounds}\n\n${leaderboard}`;
             }
         }
         return "";
+    }
+
+    private formatLeaderboard(playerRanking: Player[]): string {
+        return playerRanking.map((player, index) => `${++index}. ${player.name} ${player.Score}`).join('\n');
+    }
+
+    private setMedals(leaderboard: string): string {
+        return leaderboard.replace("1. ", "🥇. ")
+            .replace("2. ", "🥈. ")
+            .replace("3. ", "🥉. ");
     }
 
     private shoot(diceValue: number)  {

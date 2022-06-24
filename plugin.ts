@@ -118,7 +118,7 @@ export class Plugin extends AbstractPlugin {
 
     private initiateGame(gameTemplate: GameTemplate, user: User): string {
         this.currentGame = gameTemplate.NewGame();
-        this.currentGame.AddPlayer(user)
+        this.currentGame.AddPlayer(user);
         return `${user.name} started a game of ${this.currentGame.FullName}${this.startingGameOptions}`;
     }
 }
