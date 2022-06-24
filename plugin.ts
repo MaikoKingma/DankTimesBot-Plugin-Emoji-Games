@@ -38,9 +38,10 @@ export class Plugin extends AbstractPlugin {
             } else if (this.isGameRunning()) {
                 const response = this.currentGame!.HandleMessage(data);
                 if (response.delay > 0)
-                    setTimeout(() => this.sendMessage(data.chat.id, response.msg), response.delay * 1000);
-                else 
-                    data.botReplies = data.botReplies.concat(response.msg);
+                    setTimeout(() => this.sendMessage(data.chat.id, response.msg, response.isReply ? data.msg.message_id : undefined), response.delay * 1000);
+                else {
+                    this.sendMessage(data.chat.id, response.msg, response.isReply ? data.msg.message_id : undefined)
+                }
                 if (this.currentGame!.GameState === GameState.Ended) {
                     this.currentGame = undefined;
                 }
@@ -62,8 +63,8 @@ export class Plugin extends AbstractPlugin {
         const helpCommand = new BotCommand([Plugin.INFO_CMD], "", this.info.bind(this));
         const chooseGameCommand = new BotCommand([Plugin.CHOOSE_GAME_CMD], "", this.chooseGame.bind(this));
         const joinGameCommand = new BotCommand([Plugin.JOIN_GAME_CMD], "", this.joinGame.bind(this));
-        const stopGameCommand = new BotCommand([Plugin.CANCEL_GAME_CMD], "", this.cancelGame.bind(this))
-        const setStakesCommand = new BotCommand([Plugin.SET_STAKES_CMD], "", this.setStakes.bind(this))
+        const stopGameCommand = new BotCommand([Plugin.CANCEL_GAME_CMD], "", this.cancelGame.bind(this));
+        const setStakesCommand = new BotCommand([Plugin.SET_STAKES_CMD], "", this.setStakes.bind(this));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand];
     }

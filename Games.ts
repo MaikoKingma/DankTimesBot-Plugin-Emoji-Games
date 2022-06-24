@@ -2,6 +2,7 @@ import { AlterUserScoreArgs } from "../../src/chat/alter-user-score-args";
 import { Chat } from "../../src/chat/chat";
 import { User } from "../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
+import { GameResponse } from "./game-response";
 import { Player } from "./player";
 
 export class GameIdentifier {
@@ -73,31 +74,31 @@ export class Game extends GameIdentifier {
         }
     }
 
-    public HandleMessage(data: ChatMessageEventArguments): { msg: string, delay: number } {
+    public HandleMessage(data: ChatMessageEventArguments): GameResponse {
         var player = this.findPlayerById(data.user.id);
         if (player && data.msg.dice && data.msg.dice.emoji === this.emoji) {
             if (this.gameState === GameState.Initiated) {
                 if (player.id !== this.hostId)
-                    return { msg: `You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`, delay: 0 };
+                    return new GameResponse(`You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`);
                 else
                     this.gameState = GameState.Started;
             }
             if (player.RoundsPlayed > this.round)
-                return { msg: "Get back to your place in the queue Karen and wait for your turn just like everyone else.", delay: 0 };
-            player.shoot(data.msg.dice.value);
+                return new GameResponse(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`, 0, true);
+            player.shoot(data.msg.dice);
             if (this.hasRoundEnded()) {
-                const playerRanking = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? 1 : -1);
+                const playerRanking = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? -1 : 1);
                 const leaderboard = this.formatLeaderboard(playerRanking);
                 if (this.round === this.maxRounds) {
                     this.gameState = GameState.Ended;
                     this.payoutEarnings(data.chat, playerRanking);
-                    return { msg: `Congratulations ${playerRanking[0].name} won this game of ${this.FullName}\n\n${this.setMedals(leaderboard)}`, delay: 5 };
+                    return new GameResponse(`Congratulations ${playerRanking[0].name} won this game of ${this.FullName}\n\n${this.setMedals(leaderboard)}`, 5);
                 }
                 else
-                    return { msg: `Round: ${this.round}/${this.maxRounds}\n\n${leaderboard}`, delay: 5 };
+                    return new GameResponse(`Round: ${this.round}/${this.maxRounds}\n\n${leaderboard}`, 5);
             }
         }
-        return { msg: "", delay: 0 };
+        return new GameResponse();
     }
 
     public ReturnStakes(chat: Chat) {
@@ -147,9 +148,9 @@ export class Game extends GameIdentifier {
     }
 
     private setMedals(leaderboard: string): string {
-        return leaderboard.replace("1. ", "🥇. ")
-            .replace("2. ", "🥈. ")
-            .replace("3. ", "🥉. ");
+        return leaderboard.replace("1. ", "🥇 ")
+            .replace("2. ", "🥈 ")
+            .replace("3. ", "🥉 ");
     }
 
     private hasRoundEnded(): boolean {
