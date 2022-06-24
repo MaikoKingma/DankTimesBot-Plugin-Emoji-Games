@@ -75,7 +75,7 @@ export class Plugin extends AbstractPlugin {
 
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (this.isGameRunning())
-            return "";
+            return "You can't start a when one is already in progress, moron...";
         if (msg.text) {
             const msgText = msg.text!.replace("/" + Plugin.CHOOSE_GAME_CMD, "").trim();
             let gameTemplate = this.selectGameByIndex(msgText);
@@ -106,7 +106,7 @@ export class Plugin extends AbstractPlugin {
 
     private cancelGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (!this.isGameRunning())
-            return "";
+            return "What do you expect me to cancel, theres nothing going on you fool!";
         const response = `Canceled the game of ${this.currentGame!.FullName}`;
         this.currentGame = undefined;
         return response;
