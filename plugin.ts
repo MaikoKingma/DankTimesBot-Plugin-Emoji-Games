@@ -6,6 +6,7 @@ import { User } from "../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
+import { GameResponse } from "./game-response";
 import { Game, GameState, GameTemplate } from "./Games";
 
 export class Plugin extends AbstractPlugin {
@@ -24,6 +25,9 @@ export class Plugin extends AbstractPlugin {
     ];
     private waitingForResponse?: number;
 
+    private roundTimeout: NodeJS.Timeout;
+    private gameTimeout: NodeJS.Timeout;
+
     constructor() {
         super("Emoji Games", "1.1.0");
 
@@ -36,15 +40,7 @@ export class Plugin extends AbstractPlugin {
                 if (gameTemplate)
                     data.botReplies = data.botReplies.concat(this.initiateGame(gameTemplate, data.user, data.chat, 0));
             } else if (this.isGameRunning()) {
-                const response = this.currentGame!.HandleMessage(data);
-                if (response.delay > 0)
-                    setTimeout(() => this.sendMessage(data.chat.id, response.msg, response.isReply ? data.msg.message_id : undefined), response.delay * 1000);
-                else {
-                    this.sendMessage(data.chat.id, response.msg, response.isReply ? data.msg.message_id : undefined)
-                }
-                if (this.currentGame!.GameState === GameState.Ended) {
-                    this.currentGame = undefined;
-                }
+                this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
             }
         });
     }
@@ -63,7 +59,7 @@ export class Plugin extends AbstractPlugin {
         const helpCommand = new BotCommand([Plugin.INFO_CMD], "", this.info.bind(this));
         const chooseGameCommand = new BotCommand([Plugin.CHOOSE_GAME_CMD], "", this.chooseGame.bind(this));
         const joinGameCommand = new BotCommand([Plugin.JOIN_GAME_CMD], "", this.joinGame.bind(this));
-        const stopGameCommand = new BotCommand([Plugin.CANCEL_GAME_CMD], "", this.cancelGame.bind(this));
+        const stopGameCommand = new BotCommand([Plugin.CANCEL_GAME_CMD], "", this.cancelGameByUser.bind(this));
         const setStakesCommand = new BotCommand([Plugin.SET_STAKES_CMD], "", this.setStakes.bind(this));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand];
@@ -134,17 +130,21 @@ export class Plugin extends AbstractPlugin {
         return this.currentGame!.AddPlayer(user, chat);
     }
 
-    private cancelGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
+    private cancelGameByUser(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (!this.isGameRunning())
             return "What do you expect me to cancel, theres nothing going on you fool!";
         if (user.id !== this.currentGame!.HostId)
             return "Only the host can cancel the game.";
-        let response = `Canceled the game of ${this.currentGame!.FullName}`;
+        return this.cancelGame(chat)
+    }
+
+    private cancelGame(chat: Chat, autoCancel: boolean = false): string {
+        let response = autoCancel ? `The game of ${this.currentGame!.FullName} was canceled due to inactivity` : `Canceled the game of ${this.currentGame!.FullName}`;
         if (this.currentGame!.Stakes > 0) {
             this.currentGame!.ReturnStakes(chat);
             response += "\nAll stakes were returned."
         }
-        this.currentGame = undefined;
+        this.resetGame();
         return response;
     }
 
@@ -153,6 +153,7 @@ export class Plugin extends AbstractPlugin {
     }
 
     private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, stakes: number): string {
+        this.resetGameTimeout(chat);
         this.currentGame = gameTemplate.NewGame(stakes);
         this.currentGame.AddPlayer(user, chat);
         let response = `${user.name} started a game of ${this.currentGame.FullName}${this.startingGameOptions}`;
@@ -160,5 +161,33 @@ export class Plugin extends AbstractPlugin {
             response += `\n\nThey set the stakes to ${stakes}`;
         }
         return response;
+    }
+
+    private handleGameResponse(response: GameResponse, data: ChatMessageEventArguments) {
+        if (response.ValidInteraction) {
+            this.resetGameTimeout(data.chat);
+        }
+        if (response.Delay > 0)
+            setTimeout(() => this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined), response.Delay * 1000);
+        else {
+            this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined)
+        }
+        if (this.currentGame!.GameState === GameState.Ended) {
+            this.resetGame();
+        } else if (response.RoundEnded) {
+            clearTimeout(this.roundTimeout);
+            this.roundTimeout = setTimeout(() => this.handleGameResponse(this.currentGame!.EndRoundEarly(data.chat), data), 20 * 1000);
+        }
+    }
+
+    private resetGameTimeout(chat: Chat) {
+        clearTimeout(this.gameTimeout);
+        this.gameTimeout = setTimeout(() => this.sendMessage(chat.id, this.cancelGame(chat, true)), 60 * 1000);
+    }
+
+    private resetGame() {
+        clearTimeout(this.roundTimeout);
+        clearTimeout(this.gameTimeout);
+        this.currentGame = undefined;
     }
 }

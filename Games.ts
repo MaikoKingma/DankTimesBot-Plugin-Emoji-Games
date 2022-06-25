@@ -76,29 +76,22 @@ export class Game extends GameIdentifier {
 
     public HandleMessage(data: ChatMessageEventArguments): GameResponse {
         var player = this.findPlayerById(data.user.id);
-        if (player && data.msg.dice && data.msg.dice.emoji === this.emoji) {
+        if (player && !player.Disqualified && data.msg.dice && data.msg.dice.emoji === this.emoji) {
             if (this.gameState === GameState.Initiated) {
                 if (player.id !== this.hostId)
-                    return new GameResponse(`You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`);
+                    return GameResponse.PlayerError(`You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`);
                 else
                     this.gameState = GameState.Started;
             }
             if (player.RoundsPlayed > this.round)
-                return new GameResponse(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`, 0, true);
+                return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
             player.shoot(data.msg.dice);
             if (this.hasRoundEnded()) {
-                const playerRanking = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? -1 : 1);
-                const leaderboard = this.formatLeaderboard(playerRanking);
-                if (this.round === this.maxRounds) {
-                    this.gameState = GameState.Ended;
-                    this.payoutEarnings(data.chat, playerRanking);
-                    return new GameResponse(`Congratulations ${playerRanking[0].name} won this game of ${this.FullName}\n\n${this.setMedals(leaderboard)}`, 5);
-                }
-                else
-                    return new GameResponse(`Round: ${this.round}/${this.maxRounds}\n\n${leaderboard}`, 5);
+                return this.endRound(data.chat);
             }
+            return GameResponse.EmptyResponse(true);
         }
-        return new GameResponse();
+        return GameResponse.EmptyResponse(false);
     }
 
     public ReturnStakes(chat: Chat) {
@@ -118,6 +111,28 @@ export class Game extends GameIdentifier {
         this.stakes = stakes;        
         chat.alterUserScore(new AlterUserScoreArgs(user, this.stakes * -1, this.name, `Invested stakes into ${this.FullName}`));
         return `${user.name} set the stakes to ${stakes}`;
+    }
+
+    public EndRoundEarly(chat: Chat): GameResponse {
+        const disqualifiedPlayers = this.players.filter((player) => {
+            if (player.RoundsPlayed !== (this.round + 1)) {
+                player.Disqualified = true;
+            }
+            return player.Disqualified;
+        });
+        return this.endRound(chat, disqualifiedPlayers.length > 0 ? "\n\nDisqualified player(s): " + disqualifiedPlayers.map((player) => player.name).join(", ") : "");
+    }
+
+    private endRound(chat: Chat, disqualifiedMessage: string = ""): GameResponse {
+        const playerRanking = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? -1 : 1);
+        const leaderboard = this.formatLeaderboard(playerRanking);
+        if (this.round === this.maxRounds || this.players.every((player) => player.Disqualified)) {
+            this.gameState = GameState.Ended;
+            this.payoutEarnings(chat, playerRanking);
+            return GameResponse.RoundTransition(`Congratulations ${playerRanking[0].name} won this game of ${this.FullName}\n\n${this.setMedals(leaderboard)}${disqualifiedMessage}`);
+        }
+        else
+            return GameResponse.RoundTransition(`Round: ${this.round}/${this.maxRounds}\n\n${leaderboard}${disqualifiedMessage}`);
     }
 
     private payoutEarnings(chat: Chat, ranking: Player[]) {
@@ -154,7 +169,7 @@ export class Game extends GameIdentifier {
     }
 
     private hasRoundEnded(): boolean {
-        const allPlayersPlayed = this.players.every((player) => player.RoundsPlayed === (this.round + 1));
+        const allPlayersPlayed = this.players.every((player) => player.RoundsPlayed === (this.round + 1) || player.Disqualified);
         if (allPlayersPlayed) {
             this.round++;
             return true;
