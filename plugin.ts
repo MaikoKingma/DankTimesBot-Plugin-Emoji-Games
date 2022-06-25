@@ -7,7 +7,7 @@ import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/e
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { GameResponse } from "./game-response";
-import { Game, GameState, GameTemplate } from "./Games";
+import { Game, GameState, GameTemplate } from "./games";
 
 export class Plugin extends AbstractPlugin {
 
