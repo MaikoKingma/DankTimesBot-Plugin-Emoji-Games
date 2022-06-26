@@ -41,6 +41,7 @@ export class Game extends GameIdentifier {
     private gameState: GameState = GameState.Initiated;
     private round: number = 0;
     private players: Player[] = [];
+    private tiedPlayersCache: Player[] = [];
 
     public get Stakes(): number {
         return this.stakes;
@@ -77,6 +78,13 @@ export class Game extends GameIdentifier {
     public HandleMessage(data: ChatMessageEventArguments): GameResponse {
         var player = this.findPlayerById(data.user.id);
         if (player && !player.Disqualified && data.msg.dice && data.msg.dice.emoji === this.emoji) {
+            let tieBreaking = false;
+            if (this.tiedPlayersCache.length !== 0) {
+                if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1)
+                    return GameResponse.EmptyResponse(false);
+                else
+                    tieBreaking = true;
+            }
             if (this.gameState === GameState.Initiated) {
                 if (player.id !== this.hostId)
                     return GameResponse.PlayerError(`You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`);
@@ -85,7 +93,7 @@ export class Game extends GameIdentifier {
             }
             if (player.RoundsPlayed > this.round)
                 return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
-            player.shoot(data.msg.dice);
+            player.shoot(data.msg.dice, tieBreaking);
             if (this.hasRoundEnded()) {
                 return this.endRound(data.chat);
             }
@@ -114,19 +122,24 @@ export class Game extends GameIdentifier {
     }
 
     public EndRoundEarly(chat: Chat): GameResponse {
-        const disqualifiedPlayers = this.players.filter((player) => {
-            if (player.RoundsPlayed !== (this.round + 1)) {
+        const playersToDisqualify: string[] = [];
+        for (const player of this.players) {
+            if (!player.Disqualified && player.RoundsPlayed !== (this.round + 1)) {
                 player.Disqualified = true;
+                playersToDisqualify.push(player.name);
             }
-            return player.Disqualified;
-        });
-        return this.endRound(chat, disqualifiedPlayers.length > 0 ? "\n\nDisqualified player(s): " + disqualifiedPlayers.map((player) => player.name).join(", ") : "");
+        }
+        return this.endRound(chat, playersToDisqualify.length > 0 ? "\n\nDisqualified player(s): " + playersToDisqualify.join(", ") : "");
     }
 
     private endRound(chat: Chat, disqualifiedMessage: string = ""): GameResponse {
-        const playerRanking = this.players.sort((playerA, playerB) => playerA.Score > playerB.Score ? -1 : 1);
+        const playerRanking = this.sortPlayers();
         const leaderboard = this.formatLeaderboard(playerRanking);
         if (this.round === this.maxRounds || this.players.every((player) => player.Disqualified)) {
+            const tiedPlayersCache = this.getTiedPlayers(playerRanking);
+            if (tiedPlayersCache.length > 0) {
+                return GameResponse.RoundTransition(`Players ${tiedPlayersCache.map((player) => player.name).join(", ")} have to take another shot for the tiebreaker\n\n${leaderboard}${disqualifiedMessage}`)
+            }
             this.gameState = GameState.Ended;
             this.payoutEarnings(chat, playerRanking);
             return GameResponse.RoundTransition(`Congratulations ${playerRanking[0].name} won this game of ${this.FullName}\n\n${this.setMedals(leaderboard)}${disqualifiedMessage}`);
@@ -135,22 +148,46 @@ export class Game extends GameIdentifier {
             return GameResponse.RoundTransition(`Round: ${this.round}/${this.maxRounds}\n\n${leaderboard}${disqualifiedMessage}`);
     }
 
+    private getTiedPlayers(playerRanking: Player[]): Player[] {
+        const tiedPlayers: Player[] = [];
+        for (let i = 0; i < playerRanking.length; i++) {
+            if (i === 5)
+                break;
+            const player = playerRanking[i];
+            if (player.Disqualified)
+                break;
+            if (playerRanking[i - 1] && player.isTied(playerRanking[i - 1])) {
+                tiedPlayers.push(player);
+            } else if (i !== 4 && playerRanking[i + 1] && player.isTied(playerRanking[i - 1])) {
+                tiedPlayers.push(player);
+            }
+        }
+        return tiedPlayers;
+    }
+
     private payoutEarnings(chat: Chat, ranking: Player[]) {
         if (this.stakes <= 0)
             return;
         const totalPriceMoney = ranking.length * this.stakes;
-        if (ranking.length === 1 || ranking.length === 2)
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, totalPriceMoney, this.name, `Winnings from ${this.FullName}`));
+        if (ranking.length === 1 || ranking.length === 2) {
+            if (!ranking[0].Disqualified)
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, totalPriceMoney, this.name, `Winnings from ${this.FullName}`));
+        }
         else if (ranking.length === 3) {
             const payoutFirstPlace = totalPriceMoney / 3;
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, totalPriceMoney - payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
+            if (!ranking[0].Disqualified)
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
+            if (!ranking[1].Disqualified)
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, totalPriceMoney - payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
         } else {
             const payoutFirstPlace = totalPriceMoney / 2;
             const payoutSecondPlace = ((totalPriceMoney - payoutFirstPlace) / 5) * 3;
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, payoutSecondPlace, this.name, `Winnings from ${this.FullName}`));
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[2].id)!, totalPriceMoney - payoutFirstPlace - payoutSecondPlace, this.name, `Winnings from ${this.FullName}`));
+            if (!ranking[0].Disqualified)
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
+            if (!ranking[1].Disqualified)
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, payoutSecondPlace, this.name, `Winnings from ${this.FullName}`));
+            if (!ranking[2].Disqualified)
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[2].id)!, totalPriceMoney - payoutFirstPlace - payoutSecondPlace, this.name, `Winnings from ${this.FullName}`));
         }
     }
 
@@ -158,8 +195,26 @@ export class Game extends GameIdentifier {
         return this.players.find((player) => player.id === id)
     }
 
+    private sortPlayers(): Player[] {
+        return this.players.sort((playerA, playerB) => {
+            if (playerA.Disqualified && playerB.Disqualified)
+                return 0;
+            if (playerA.Disqualified !== playerB.Disqualified) {
+                return playerA.Disqualified ? 1 : -1;
+            }
+            if (playerA.Score === playerB.Score) {
+                if (playerA.TieBreakerScore === playerB.TieBreakerScore)
+                    return 0;
+                else
+                    return playerA.TieBreakerScore > playerB.TieBreakerScore ? -1 : 1;
+            } else {
+                return playerA.Score > playerB.Score ? -1 : 1;
+            }
+        });
+    }
+
     private formatLeaderboard(playerRanking: Player[]): string {
-        return playerRanking.map((player, index) => `${++index}. ${player.name} ${player.Score}`).join('\n');
+        return playerRanking.map((player, index) => `${++index}. ${player.ToString()}`).join('\n');
     }
 
     private setMedals(leaderboard: string): string {
