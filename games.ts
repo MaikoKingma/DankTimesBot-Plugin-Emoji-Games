@@ -83,7 +83,7 @@ export class Game extends GameIdentifier {
             let tieBreaking = false;
             if (this.tiedPlayersCache.length !== 0) {
                 if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1) 
-                return GameResponse.EmptyResponse(false);
+                    return GameResponse.EmptyResponse(false);
                 else
                     tieBreaking = true;
             }
@@ -137,10 +137,10 @@ export class Game extends GameIdentifier {
     private endRound(chat: Chat, disqualifiedMessage: string = ""): GameResponse {
         const playerRanking = this.sortPlayers();
         const leaderboard = this.formatLeaderboard(playerRanking);
-        if (this.round === this.maxRounds || this.players.every((player) => player.Disqualified)) {
-            const tiedPlayersCache = this.getTiedPlayers(playerRanking);
-            if (tiedPlayersCache.length > 0) {
-                return GameResponse.RoundTransition(`Players ${tiedPlayersCache.map((player) => player.name).join(", ")} have to take another shot for the tiebreaker\n\n${leaderboard}${disqualifiedMessage}`)
+        if (this.round >= this.maxRounds || this.players.every((player) => player.Disqualified)) {
+            this.tiedPlayersCache = this.getTiedPlayers(playerRanking);
+            if (this.tiedPlayersCache.length > 0) {
+                return GameResponse.RoundTransition(`Players ${this.tiedPlayersCache.map((player) => player.name).join(", ")} have to take another shot for the tiebreaker\n\n${leaderboard}${disqualifiedMessage}`)
             }
             this.gameState = GameState.Ended;
             this.payoutEarnings(chat, playerRanking);
