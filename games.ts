@@ -21,8 +21,8 @@ export class GameTemplate extends GameIdentifier {
         return (msg === this.name.toLocaleLowerCase() || msg === this.emoji.toLocaleLowerCase() || msg === this.FullName.toLocaleLowerCase());
     }
 
-    public NewGame(stakes: number): Game {
-        return new Game(this.name, this.emoji, this.maxRounds, stakes);
+    public NewGame(rounds: number, stakes: number): Game {
+        return new Game(this.name, this.emoji, rounds > 0 ? rounds : this.maxRounds, stakes);
     }
 
     public GetInfo(): string {

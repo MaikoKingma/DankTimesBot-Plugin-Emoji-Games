@@ -40,7 +40,7 @@ export class Plugin extends AbstractPlugin {
                     return;
                 const gameTemplate = this.selectGameByIndex(data.msg.text);
                 if (gameTemplate)
-                    data.botReplies = data.botReplies.concat(this.initiateGame(gameTemplate, data.user, data.chat, 0));
+                    data.botReplies = data.botReplies.concat(this.initiateGame(gameTemplate, data.user, data.chat));
             } else if (this.isGameRunning()) {
                 this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
             }
@@ -69,7 +69,7 @@ export class Plugin extends AbstractPlugin {
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return "A variety of games played with emoji's\n\n"
-            + `/${Plugin.CHOOSE_GAME_CMD} (optional)[GameName|GameEmoji|GameIndex] [Stakes]\n`
+            + `/${Plugin.CHOOSE_GAME_CMD} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
             + `/${Plugin.JOIN_GAME_CMD}\n`
             + `/${Plugin.CANCEL_GAME_CMD}\n`
             + `/${Plugin.SET_STAKES_CMD} [Stakes]\n\n`
@@ -94,12 +94,18 @@ export class Plugin extends AbstractPlugin {
                     gameTemplate = this.availableGames.find((game) => game.IdentifyGame(chooseGameParams[0]));
                 if (gameTemplate) {
                     let stakes = 0;
+                    let rounds = -1;
                     if (chooseGameParams[1]) {
-                        stakes = parseInt(chooseGameParams[1]);
+                        rounds = parseInt(chooseGameParams[1]);
+                        if (!rounds || rounds <= 0 || (rounds % 1 !== 0))
+                            return "The rounds must be a valid.";
+                    }
+                    if (chooseGameParams[2]) {
+                        stakes = parseInt(chooseGameParams[2]);
                         if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
                             return "The stakes must be a valid number and payable with your current score.";
                     }
-                    return this.initiateGame(gameTemplate, user, chat, stakes);
+                    return this.initiateGame(gameTemplate, user, chat, rounds, stakes);
                 }
             }
         }
@@ -156,9 +162,9 @@ export class Plugin extends AbstractPlugin {
         return !!this.currentGame;
     }
 
-    private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, stakes: number): string {
+    private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, rounds: number = -1, stakes: number = 0): string {
         this.resetGameTimeout(chat);
-        this.currentGame = gameTemplate.NewGame(stakes);
+        this.currentGame = gameTemplate.NewGame(rounds, stakes);
         this.currentGame.AddPlayer(user, chat);
         let response = `${user.name} started a game of ${this.currentGame.FullName}${this.startingGameOptions}`;
         if (this.currentGame.Stakes > 0) {
