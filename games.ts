@@ -28,7 +28,7 @@ export class GameTemplate extends GameIdentifier {
     public GetInfo(): string {
         return this.FullName + "\n\n"
             + `Shoot by posting the ${this.emoji} emoji. After ${this.maxRounds} rounds the player with the highest score wins.`
-            + (this.emoji === Emoji.DartEmoji ? `\nBullseye: 25 points\n1st circle: 15 points\n2nd circle 10 points\n3rd circle 5 points\n4th circle 3 points` : "");
+            + (this.emoji === Emoji.DartEmoji ? `\nBullseye: 25 points\n1st circle: 15 points\n2nd circle: 10 points\n3rd circle: 5 points\n4th circle: 3 points` : "");
     }
 }
 
