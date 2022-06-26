@@ -13,7 +13,7 @@ export class Player {
     public Shoot(dice: Dice, tieBreaker: boolean) {
         this.RoundsPlayed++;
         if (dice.emoji === Emoji.DartEmoji) {
-            this.shootDart(dice.value);
+            this.shootDart(dice.value, tieBreaker);
             return;
         }
         const minScore = dice.emoji === Emoji.FootballEmoji ? 3 : 4;
@@ -34,22 +34,22 @@ export class Player {
         return str;
     }
 
-    private shootDart(value: number) {
+    private shootDart(value: number, tieBreaker: boolean) {
         switch (value) {
             case 2:
-                this.Score += 3;
+                tieBreaker ? this.TieBreakerScore += 3 : this.Score += 3;
                 break;
             case 3:
-                this.Score += 5;
+                tieBreaker ? this.TieBreakerScore += 5 : this.Score += 5;
                 break;
             case 4:
-                this.Score += 10;
+                tieBreaker ? this.TieBreakerScore += 10 : this.Score += 10;
                 break;
             case 5:
-                this.Score += 15;
+                tieBreaker ? this.TieBreakerScore += 15 : this.Score += 15;
                 break;
             case 6:
-                this.Score += 25;
+                tieBreaker ? this.TieBreakerScore += 25 : this.Score += 25;
                 break;
         }
     }
