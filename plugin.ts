@@ -12,6 +12,7 @@ import { Game, GameState, GameTemplate } from "./games";
 
 export class Plugin extends AbstractPlugin {
 
+    private static readonly PLUGIN_NAME = "Emoji Games";
     private static readonly INFO_CMD = "emojigames";
     private static readonly CHOOSE_GAME_CMD = "choosegame";
     private static readonly JOIN_GAME_CMD = "join";
@@ -31,7 +32,7 @@ export class Plugin extends AbstractPlugin {
     private gameTimeout: NodeJS.Timeout;
 
     constructor() {
-        super("Emoji Games", "1.1.0");
+        super(Plugin.PLUGIN_NAME, "1.1.0");
 
         this.subscribeToPluginEvent(PluginEvent.ChatMessage, (data: ChatMessageEventArguments) => {
             if (this.waitingForResponse && this.waitingForResponse == data.user.id) {
@@ -58,7 +59,7 @@ export class Plugin extends AbstractPlugin {
      * @override
      */
     public getPluginSpecificCommands(): BotCommand[] {
-        const helpCommand = new BotCommand([Plugin.INFO_CMD], "", this.info.bind(this));
+        const helpCommand = new BotCommand([Plugin.INFO_CMD], `Prints info about the ${Plugin.PLUGIN_NAME}`, this.info.bind(this));
         const chooseGameCommand = new BotCommand([Plugin.CHOOSE_GAME_CMD], "", this.chooseGame.bind(this));
         const joinGameCommand = new BotCommand([Plugin.JOIN_GAME_CMD], "", this.joinGame.bind(this));
         const stopGameCommand = new BotCommand([Plugin.CANCEL_GAME_CMD], "", this.cancelGameByUser.bind(this));
