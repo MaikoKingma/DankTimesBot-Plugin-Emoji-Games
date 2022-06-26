@@ -96,7 +96,7 @@ export class Plugin extends AbstractPlugin {
                     let stakes = 0;
                     if (chooseGameParams[1]) {
                         stakes = parseInt(chooseGameParams[1]);
-                        if (stakes <= 0 || user.score < stakes)
+                        if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
                             return "The stakes must be a valid number and payable with your current score.";
                     }
                     return this.initiateGame(gameTemplate, user, chat, stakes);
@@ -113,7 +113,7 @@ export class Plugin extends AbstractPlugin {
             return "There is no game to set stakes on.";
         const setStakesParams = msg.text!.replace("/" + Plugin.SET_STAKES_CMD, "").trim().split(" ");
         const stakes = parseInt(setStakesParams[0]);
-        if (stakes <= 0 && user.score < stakes)
+        if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
             return "The stakes must be a valid number and payable with your current score.";
         return this.currentGame!.SetStakes(chat, user, stakes);
     }
