@@ -20,7 +20,7 @@ export class Plugin extends AbstractPlugin {
     private static readonly SET_STAKES_CMD = "setstakes";
 
     private currentGame?: Game;
-    private startingGameOptions = "\nUse /Join to join the game";
+    private startingGameOptions = `\nUse /${Plugin.JOIN_GAME_CMD} to join the game`;
     private availableGames: GameTemplate[] = [
         new GameTemplate("Hoops", Emoji.BasketballEmoji, 9),
         new GameTemplate("Penalties", Emoji.FootballEmoji, 5),
@@ -88,6 +88,8 @@ export class Plugin extends AbstractPlugin {
         if (this.isGameRunning())
             return "You can't start a when one is already in progress, moron...";
         if (msg.text) {
+            const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => "@" + msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
+            mentions.forEach((mention) => msg.text = msg.text?.replace(mention, ""));
             const chooseGameParams = msg.text!.replace("/" + Plugin.CHOOSE_GAME_CMD, "").trim().split(" ");
             if (chooseGameParams[0]) {
                 let gameTemplate = this.selectGameByIndex(chooseGameParams[0]);
@@ -106,7 +108,7 @@ export class Plugin extends AbstractPlugin {
                         if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
                             return "The stakes must be a valid number and payable with your current score.";
                     }
-                    return this.initiateGame(gameTemplate, user, chat, rounds, stakes);
+                    return this.initiateGame(gameTemplate, user, chat, rounds, stakes, mentions);
                 }
             }
         }
@@ -163,11 +165,11 @@ export class Plugin extends AbstractPlugin {
         return !!this.currentGame;
     }
 
-    private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, rounds: number = -1, stakes: number = 0): string {
+    private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, rounds: number = -1, stakes: number = 0, mentions: string[] = []): string {
         this.resetGameTimeout(chat);
         this.currentGame = gameTemplate.NewGame(rounds, stakes);
         this.currentGame.AddPlayer(user, chat);
-        let response = `${user.name} started a game of ${this.currentGame.FullName}${this.startingGameOptions}`;
+        let response = `${user.name} ${mentions.length > 0 ? `challenged ${mentions.join(", ")} to` : "started"} a game of ${this.currentGame.FullName}${this.startingGameOptions}`;
         if (this.currentGame.Stakes > 0) {
             response += `\n\nThey set the stakes to ${stakes}`;
         }
