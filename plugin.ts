@@ -167,10 +167,12 @@ export class Plugin extends AbstractPlugin {
         if (response.ValidInteraction) {
             this.resetGameTimeout(data.chat);
         }
-        if (response.Delay > 0)
-            setTimeout(() => this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined), response.Delay * 1000);
-        else {
-            this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined)
+        if (response.Msg) {
+            if (response.Delay > 0)
+                setTimeout(() => this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined), response.Delay * 1000);
+            else {
+                this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined)
+            }
         }
         if (this.currentGame!.GameState === GameState.Ended) {
             this.resetGame();
