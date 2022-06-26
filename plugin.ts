@@ -76,7 +76,8 @@ export class Plugin extends AbstractPlugin {
             + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
             + "Two player game: Winner takes all\n"
             + "Three player game: 1st gets 2/3 of the pot and 2nd gets 1/3\n"
-            + "Four or more player game: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n";
+            + "Four or more player game: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n\n"
+            + '<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
     }
 
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
