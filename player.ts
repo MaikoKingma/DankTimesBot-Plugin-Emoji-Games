@@ -1,4 +1,5 @@
 import { Dice } from "node-telegram-bot-api";
+import { Emoji } from "./emoji";
 
 export class Player {
 
@@ -9,14 +10,18 @@ export class Player {
 
     constructor(public id: number, public name: string) { }
 
-    public shoot(dice: Dice, tieBreaker: boolean) {
-        const minScore = dice.emoji == "\u26BD" ? 3 : 4;
+    public Shoot(dice: Dice, tieBreaker: boolean) {
+        this.RoundsPlayed++;
+        if (dice.emoji === Emoji.DartEmoji) {
+            this.shootDart(dice.value);
+            return;
+        }
+        const minScore = dice.emoji === Emoji.FootballEmoji ? 3 : 4;
         if (dice.value >= minScore)
             tieBreaker ? this.TieBreakerScore++ : this.Score++;
-        this.RoundsPlayed++;
     }
 
-    public isTied(player: Player): boolean {
+    public IsTied(player: Player): boolean {
         return (!this.Disqualified && !player.Disqualified && this.Score === player.Score && this.TieBreakerScore == player.TieBreakerScore);
     }
     
@@ -27,5 +32,25 @@ export class Player {
         if (this.Disqualified)
             str = `<s>${str}</s>`;
         return str;
+    }
+
+    private shootDart(value: number) {
+        switch (value) {
+            case 2:
+                this.Score += 3;
+                break;
+            case 3:
+                this.Score += 5;
+                break;
+            case 4:
+                this.Score += 10;
+                break;
+            case 5:
+                this.Score += 15;
+                break;
+            case 6:
+                this.Score += 25;
+                break;
+        }
     }
 }

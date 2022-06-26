@@ -6,6 +6,7 @@ import { User } from "../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
+import { Emoji } from "./emoji";
 import { GameResponse } from "./game-response";
 import { Game, GameState, GameTemplate } from "./games";
 
@@ -20,8 +21,9 @@ export class Plugin extends AbstractPlugin {
     private currentGame?: Game;
     private startingGameOptions = "\nUse /Join to join the game";
     private availableGames: GameTemplate[] = [
-        new GameTemplate("Hoops", "🏀", 9),
-        new GameTemplate("Penalties", "\u26BD", 5)
+        new GameTemplate("Hoops", Emoji.BasketballEmoji, 9),
+        new GameTemplate("Penalties", Emoji.FootballEmoji, 5),
+        new GameTemplate("Darts", Emoji.DartEmoji, 5)
     ];
     private waitingForResponse?: number;
 
@@ -72,7 +74,8 @@ export class Plugin extends AbstractPlugin {
             + `/${Plugin.CANCEL_GAME_CMD}\n`
             + `/${Plugin.SET_STAKES_CMD} [Stakes]\n\n`
             + this.availableGames.map((game) => game.GetInfo()).join("\n\n")
-            + "\n\nStakes\n\n"
+            + "\n\nAll games automatically start once the host takes the first shot.\n\n"
+            + "Stakes\n\n"
             + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
             + "Two player game: Winner takes all\n"
             + "Three player game: 1st gets 2/3 of the pot and 2nd gets 1/3\n"

@@ -2,6 +2,7 @@ import { AlterUserScoreArgs } from "../../src/chat/alter-user-score-args";
 import { Chat } from "../../src/chat/chat";
 import { User } from "../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
+import { Emoji } from "./emoji";
 import { GameResponse } from "./game-response";
 import { Player } from "./player";
 
@@ -26,7 +27,8 @@ export class GameTemplate extends GameIdentifier {
 
     public GetInfo(): string {
         return this.FullName + "\n\n"
-            + `In the same order the players joined the game shoot by posting the ${this.emoji} emoji. After ${this.maxRounds} rounds the player with the highest score wins.`;
+            + `Shoot by posting the ${this.emoji} emoji. After ${this.maxRounds} rounds the player with the highest score wins.`
+            + (this.emoji === Emoji.DartEmoji ? `\nBullseye: 25 points\n1st circle: 15 points\n2nd circle 10 points\n3rd circle 5 points\n4th circle 3 points` : "");
     }
 }
 
@@ -80,8 +82,8 @@ export class Game extends GameIdentifier {
         if (player && !player.Disqualified && data.msg.dice && data.msg.dice.emoji === this.emoji) {
             let tieBreaking = false;
             if (this.tiedPlayersCache.length !== 0) {
-                if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1)
-                    return GameResponse.EmptyResponse(false);
+                if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1) 
+                return GameResponse.EmptyResponse(false);
                 else
                     tieBreaking = true;
             }
@@ -93,7 +95,7 @@ export class Game extends GameIdentifier {
             }
             if (player.RoundsPlayed > this.round)
                 return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
-            player.shoot(data.msg.dice, tieBreaking);
+            player.Shoot(data.msg.dice, tieBreaking);
             if (this.hasRoundEnded()) {
                 return this.endRound(data.chat);
             }
@@ -156,9 +158,9 @@ export class Game extends GameIdentifier {
             const player = playerRanking[i];
             if (player.Disqualified)
                 break;
-            if (playerRanking[i - 1] && player.isTied(playerRanking[i - 1])) {
+            if (playerRanking[i - 1] && player.IsTied(playerRanking[i - 1])) {
                 tiedPlayers.push(player);
-            } else if (i !== 4 && playerRanking[i + 1] && player.isTied(playerRanking[i - 1])) {
+            } else if (i !== 4 && playerRanking[i + 1] && player.IsTied(playerRanking[i - 1])) {
                 tiedPlayers.push(player);
             }
         }
