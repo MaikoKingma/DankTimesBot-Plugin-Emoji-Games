@@ -160,7 +160,7 @@ export class Game extends GameIdentifier {
                 break;
             if (playerRanking[i - 1] && player.IsTied(playerRanking[i - 1])) {
                 tiedPlayers.push(player);
-            } else if (i !== 4 && playerRanking[i + 1] && player.IsTied(playerRanking[i - 1])) {
+            } else if (i !== 4 && playerRanking[i + 1] && player.IsTied(playerRanking[i + 1])) {
                 tiedPlayers.push(player);
             }
         }
