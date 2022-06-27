@@ -3,6 +3,7 @@ import { Chat } from "../../src/chat/chat";
 import { User } from "../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
 import { Emoji } from "./emoji";
+import { EmojiGameCommands } from "./emoji-game-commands";
 import { GameResponse } from "./game-response";
 import { Player } from "./player";
 
@@ -79,27 +80,31 @@ export class Game extends GameIdentifier {
 
     public HandleMessage(data: ChatMessageEventArguments): GameResponse {
         var player = this.findPlayerById(data.user.id);
-        if (player && !player.Disqualified && data.msg.dice && data.msg.dice.emoji === this.emoji) {
-            let tieBreaking = false;
-            if (this.tiedPlayersCache.length !== 0) {
-                if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1) 
-                    return GameResponse.EmptyResponse(false);
-                else
-                    tieBreaking = true;
+        if (player && !player.Disqualified) {
+            if (data.msg.dice && data.msg.dice.emoji === this.emoji) {
+                let tieBreaking = false;
+                if (this.tiedPlayersCache.length !== 0) {
+                    if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1) 
+                        return GameResponse.EmptyResponse(false);
+                    else
+                        tieBreaking = true;
+                }
+                if (this.gameState === GameState.Initiated) {
+                    if (player.id !== this.hostId)
+                        return GameResponse.PlayerError(`You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`);
+                    else
+                        this.gameState = GameState.Started;
+                }
+                if (player.RoundsPlayed > this.round)
+                    return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
+                player.Shoot(data.msg.dice, tieBreaking);
+                if (this.hasRoundEnded()) {
+                    return this.endRound(data.chat);
+                }
+                return GameResponse.EmptyResponse(true);
+            } else if (data.msg.text === this.emoji) {
+                GameResponse.PlayerError(`You seem to be using a client that does not support animated emoji. Use a compatible client instead or the host can /${EmojiGameCommands.CANCEL_GAME} the game.`);
             }
-            if (this.gameState === GameState.Initiated) {
-                if (player.id !== this.hostId)
-                    return GameResponse.PlayerError(`You must wait for ${this.findPlayerById(this.hostId)!.name} to take the first shot.`);
-                else
-                    this.gameState = GameState.Started;
-            }
-            if (player.RoundsPlayed > this.round)
-                return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
-            player.Shoot(data.msg.dice, tieBreaking);
-            if (this.hasRoundEnded()) {
-                return this.endRound(data.chat);
-            }
-            return GameResponse.EmptyResponse(true);
         }
         return GameResponse.EmptyResponse(false);
     }

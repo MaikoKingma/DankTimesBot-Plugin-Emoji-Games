@@ -7,20 +7,16 @@ import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/e
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { Emoji } from "./emoji";
+import { EmojiGameCommands } from "./emoji-game-commands";
 import { GameResponse } from "./game-response";
 import { Game, GameState, GameTemplate } from "./games";
 
 export class Plugin extends AbstractPlugin {
 
     private static readonly PLUGIN_NAME = "Emoji Games";
-    private static readonly INFO_CMD = "emojigames";
-    private static readonly CHOOSE_GAME_CMD = "choosegame";
-    private static readonly JOIN_GAME_CMD = "join";
-    private static readonly CANCEL_GAME_CMD = "cancel";
-    private static readonly SET_STAKES_CMD = "setstakes";
 
     private currentGame?: Game;
-    private startingGameOptions = `\nUse /${Plugin.JOIN_GAME_CMD} to join the game`;
+    private startingGameOptions = `\nUse /${EmojiGameCommands.JOIN_GAME} to join the game`;
     private availableGames: GameTemplate[] = [
         new GameTemplate("Hoops", Emoji.BasketballEmoji, 9),
         new GameTemplate("Penalties", Emoji.FootballEmoji, 5),
@@ -59,21 +55,21 @@ export class Plugin extends AbstractPlugin {
      * @override
      */
     public getPluginSpecificCommands(): BotCommand[] {
-        const helpCommand = new BotCommand([Plugin.INFO_CMD], `Prints info about the ${Plugin.PLUGIN_NAME}`, this.info.bind(this));
-        const chooseGameCommand = new BotCommand([Plugin.CHOOSE_GAME_CMD], "", this.chooseGame.bind(this));
-        const joinGameCommand = new BotCommand([Plugin.JOIN_GAME_CMD], "", this.joinGame.bind(this));
-        const stopGameCommand = new BotCommand([Plugin.CANCEL_GAME_CMD], "", this.cancelGameByUser.bind(this));
-        const setStakesCommand = new BotCommand([Plugin.SET_STAKES_CMD], "", this.setStakes.bind(this));
+        const helpCommand = new BotCommand([EmojiGameCommands.INFO], `Prints info about the ${Plugin.PLUGIN_NAME}`, this.info.bind(this));
+        const chooseGameCommand = new BotCommand([EmojiGameCommands.CHOOSE_GAME], "", this.chooseGame.bind(this));
+        const joinGameCommand = new BotCommand([EmojiGameCommands.JOIN_GAME], "", this.joinGame.bind(this));
+        const stopGameCommand = new BotCommand([EmojiGameCommands.CANCEL_GAME], "", this.cancelGameByUser.bind(this));
+        const setStakesCommand = new BotCommand([EmojiGameCommands.SET_STAKES], "", this.setStakes.bind(this));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand];
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return "A variety of games played with emoji's\n\n"
-            + `/${Plugin.CHOOSE_GAME_CMD} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
-            + `/${Plugin.JOIN_GAME_CMD}\n`
-            + `/${Plugin.CANCEL_GAME_CMD}\n`
-            + `/${Plugin.SET_STAKES_CMD} [Stakes]\n\n`
+            + `/${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
+            + `/${EmojiGameCommands.JOIN_GAME}\n`
+            + `/${EmojiGameCommands.CANCEL_GAME}\n`
+            + `/${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
             + this.availableGames.map((game) => game.GetInfo()).join("\n\n")
             + "\n\nAll games automatically start once the host takes the first shot.\n\n"
             + "Stakes\n\n"
@@ -90,7 +86,7 @@ export class Plugin extends AbstractPlugin {
         if (msg.text) {
             const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => "@" + msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
             mentions.forEach((mention) => msg.text = msg.text?.replace(mention, ""));
-            const chooseGameParams = msg.text!.replace("/" + Plugin.CHOOSE_GAME_CMD, "").trim().split(" ");
+            const chooseGameParams = msg.text!.replace("/" + EmojiGameCommands.CHOOSE_GAME, "").trim().split(" ");
             if (chooseGameParams[0]) {
                 let gameTemplate = this.selectGameByIndex(chooseGameParams[0]);
                 if (!gameTemplate)
@@ -120,7 +116,7 @@ export class Plugin extends AbstractPlugin {
     private setStakes(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (!this.isGameRunning())
             return "There is no game to set stakes on.";
-        const setStakesParams = msg.text!.replace("/" + Plugin.SET_STAKES_CMD, "").trim().split(" ");
+        const setStakesParams = msg.text!.replace("/" + EmojiGameCommands.SET_STAKES, "").trim().split(" ");
         const stakes = parseInt(setStakesParams[0]);
         if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
             return "The stakes must be a valid number and payable with your current score.";
