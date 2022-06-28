@@ -16,7 +16,7 @@ export class Plugin extends AbstractPlugin {
     public static readonly PLUGIN_NAME = "Emoji Games";
 
     private currentGame?: Game;
-    private startingGameOptions = `\nUse /${EmojiGameCommands.JOIN_GAME} to join the game`;
+    private startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
     private availableGames: GameTemplate[] = [
         new GameTemplate("Hoops", Emoji.BasketballEmoji, 9),
         new GameTemplate("Penalties", Emoji.FootballEmoji, 5),
