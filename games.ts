@@ -6,6 +6,7 @@ import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "./emoji-game-commands";
 import { GameResponse } from "./game-response";
 import { Player } from "./player";
+import { Plugin } from "./plugin";
 
 export class GameIdentifier {
     constructor(protected name: string, protected emoji: string, protected maxRounds: number) {}
@@ -178,23 +179,22 @@ export class Game extends GameIdentifier {
         const totalPriceMoney = ranking.length * this.stakes;
         if (ranking.length === 1 || ranking.length === 2) {
             if (!ranking[0].Disqualified)
-                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, totalPriceMoney, this.name, `Winnings from ${this.FullName}`));
-        }
-        else if (ranking.length === 3) {
-            const payoutFirstPlace = totalPriceMoney / 3;
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, totalPriceMoney, Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
+        } else if (ranking.length === 3) {
+            const payoutSecondPlace = totalPriceMoney / 3;
             if (!ranking[0].Disqualified)
-                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, totalPriceMoney - payoutSecondPlace, Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
             if (!ranking[1].Disqualified)
-                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, totalPriceMoney - payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, payoutSecondPlace, Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
         } else {
             const payoutFirstPlace = totalPriceMoney / 2;
-            const payoutSecondPlace = ((totalPriceMoney - payoutFirstPlace) / 5) * 3;
+            const payoutSecondPlace = (totalPriceMoney - payoutFirstPlace) * 0.6;
             if (!ranking[0].Disqualified)
-                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, this.name, `Winnings from ${this.FullName}`));
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[0].id)!, payoutFirstPlace, Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
             if (!ranking[1].Disqualified)
-                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, payoutSecondPlace, this.name, `Winnings from ${this.FullName}`));
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[1].id)!, payoutSecondPlace, Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
             if (!ranking[2].Disqualified)
-                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[2].id)!, totalPriceMoney - payoutFirstPlace - payoutSecondPlace, this.name, `Winnings from ${this.FullName}`));
+                chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[2].id)!, totalPriceMoney - payoutFirstPlace - payoutSecondPlace, Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
         }
     }
 

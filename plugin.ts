@@ -13,7 +13,7 @@ import { Game, GameState, GameTemplate } from "./games";
 
 export class Plugin extends AbstractPlugin {
 
-    private static readonly PLUGIN_NAME = "Emoji Games";
+    public static readonly PLUGIN_NAME = "Emoji Games";
 
     private currentGame?: Game;
     private startingGameOptions = `\nUse /${EmojiGameCommands.JOIN_GAME} to join the game`;
