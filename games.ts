@@ -132,7 +132,7 @@ export class Game extends GameIdentifier {
     public EndRoundEarly(chat: Chat): GameResponse {
         const playersToDisqualify: string[] = [];
         for (const player of this.players) {
-            if (!player.Disqualified && player.RoundsPlayed !== (this.round + 1)) {
+            if (!player.Disqualified && player.RoundsPlayed < (this.round + 1)) {
                 player.Disqualified = true;
                 playersToDisqualify.push(player.name);
             }
