@@ -65,14 +65,14 @@ export class Plugin extends AbstractPlugin {
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        return "A variety of games played with emoji's\n\n"
+        return "<b>A variety of games played with emoji's</b>\n\n"
             + `/${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
             + `/${EmojiGameCommands.JOIN_GAME}\n`
             + `/${EmojiGameCommands.CANCEL_GAME}\n`
             + `/${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
             + this.availableGames.map((game) => game.GetInfo()).join("\n\n")
             + "\n\nAll games automatically start once the host takes the first shot.\n\n"
-            + "Stakes\n\n"
+            + "<b>Stakes</b>\n\n"
             + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
             + "Two player game: Winner takes all\n"
             + "Three player game: 1st gets 2/3 of the pot and 2nd gets 1/3\n"
