@@ -47,6 +47,10 @@ export class Game extends GameIdentifier {
     private players: Player[] = [];
     private tiedPlayersCache: Player[] = [];
 
+    public get Round(): number {
+        return this.round;
+    }
+
     public get Stakes(): number {
         return this.stakes;
     }

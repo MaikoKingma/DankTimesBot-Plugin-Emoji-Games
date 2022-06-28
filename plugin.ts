@@ -144,6 +144,8 @@ export class Plugin extends AbstractPlugin {
             return "What do you expect me to cancel, theres nothing going on you fool!";
         if (user.id !== this.currentGame!.HostId)
             return "Only the host can cancel the game.";
+        if (this.currentGame!.Stakes > 0 && this.currentGame!.Round > 0)
+            return "A game with stakes can't be canceled after the first round.";
         return this.cancelGame(chat)
     }
 
