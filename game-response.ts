@@ -3,7 +3,7 @@ export class GameResponse {
     public RoundEnded = false;
     public Delay: number = 0;
     public IsReply: boolean = false;
-    public ValidInteraction: boolean;
+    public ValidInteraction: boolean = false;
 
     private constructor() {}
 
@@ -26,6 +26,14 @@ export class GameResponse {
     public static EmptyResponse(validInteraction: boolean): GameResponse {
         const response = new GameResponse();
         response.ValidInteraction = validInteraction;
+        return response;
+    }
+
+    public static SlotMachineResponse(msg: string): GameResponse {
+        const response = new GameResponse();
+        response.Msg = msg;
+        response.Delay = 3;
+        response.IsReply = true;
         return response;
     }
 }

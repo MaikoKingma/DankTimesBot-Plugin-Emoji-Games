@@ -1,5 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import { BotCommand } from "../../src/bot-commands/bot-command";
+import { BotCommandConfirmationQuestion } from "../../src/bot-commands/bot-command-confirmation-question";
 import { Chat } from "../../src/chat/chat";
 import { ChatSettingTemplate } from "../../src/chat/settings/chat-setting-template";
 import { User } from "../../src/chat/user/user";
@@ -10,10 +11,13 @@ import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "./emoji-game-commands";
 import { GameResponse } from "./game-response";
 import { Game, GameState, GameTemplate } from "./games";
+import { SlotMachineGame } from "./slot-machine-game";
 
 export class Plugin extends AbstractPlugin {
 
     public static readonly PLUGIN_NAME = "Emoji Games";
+
+    private slotMachine: SlotMachineGame = new SlotMachineGame();
 
     private currentGame?: Game;
     private startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
@@ -31,7 +35,9 @@ export class Plugin extends AbstractPlugin {
         super(Plugin.PLUGIN_NAME, "1.1.0");
 
         this.subscribeToPluginEvent(PluginEvent.ChatMessage, (data: ChatMessageEventArguments) => {
-            if (this.waitingForResponse && this.waitingForResponse == data.user.id) {
+            if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
+                this.handleGameResponse(this.slotMachine.pullLever(data.msg.dice.value, data.chat, data.user), data);
+            } else if (this.waitingForResponse && this.waitingForResponse == data.user.id) {
                 this.waitingForResponse = undefined;
                 if (!data.msg.text)
                     return;
@@ -60,12 +66,18 @@ export class Plugin extends AbstractPlugin {
         const joinGameCommand = new BotCommand([EmojiGameCommands.JOIN_GAME], "", this.joinGame.bind(this));
         const stopGameCommand = new BotCommand([EmojiGameCommands.CANCEL_GAME], "", this.cancelGameByUser.bind(this));
         const setStakesCommand = new BotCommand([EmojiGameCommands.SET_STAKES], "", this.setStakes.bind(this));
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "Prints info about the Slot Machine game", this.slotMachine.GetStats.bind(this.slotMachine))
+        const setBetCommand = new BotCommand([EmojiGameCommands.SET_SLOT_MACHINE_BET], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string): string => {
+            this.sendMessage(chat.id, this.slotMachine.SetBet(user, msg), msg.message_id, false);
+            return "";
+        }).bind(this.slotMachine));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
-        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand];
+        // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
+        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineInfoCommand, setBetCommand];
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        return "<b>A variety of games played with emoji's</b>\n\n"
+        const message = "<b>A variety of games played with emoji's</b>\n\n"
             + `/${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
             + `/${EmojiGameCommands.JOIN_GAME}\n`
             + `/${EmojiGameCommands.CANCEL_GAME}\n`
@@ -77,7 +89,12 @@ export class Plugin extends AbstractPlugin {
             + "Two player game: Winner takes all\n"
             + "Three player game: 1st gets 2/3 of the pot and 2nd gets 1/3\n"
             + "Four or more player game: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n\n"
-            + '<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
+            + this.slotMachine.GetInfo()
+            + '\n\n<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
+
+        this.sendMessage(chat.id, message, undefined, false, true);
+
+        return "";
     }
 
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
@@ -175,7 +192,7 @@ export class Plugin extends AbstractPlugin {
     }
 
     private handleGameResponse(response: GameResponse, data: ChatMessageEventArguments) {
-        if (response.ValidInteraction) {
+        if (this.currentGame && response.ValidInteraction) {
             this.resetGameTimeout(data.chat);
         }
         if (response.Msg) {
@@ -185,6 +202,8 @@ export class Plugin extends AbstractPlugin {
                 this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined)
             }
         }
+        if (!this.currentGame)
+            return;
         if (this.currentGame!.GameState === GameState.Ended) {
             this.resetGame();
         } else if (response.RoundEnded) {
