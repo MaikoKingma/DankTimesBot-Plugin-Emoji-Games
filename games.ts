@@ -108,7 +108,7 @@ export class Game extends GameIdentifier {
                 }
                 return GameResponse.EmptyResponse(true);
             } else if (data.msg.text === this.emoji) {
-                GameResponse.PlayerError(`You seem to be using a client that does not support animated emoji. Use a compatible client instead or the host can /${EmojiGameCommands.CANCEL_GAME} the game.`);
+                return GameResponse.PlayerError(`You seem to be using a client that does not support animated emoji. Use a compatible client instead or the host can /${EmojiGameCommands.CANCEL_GAME} the game.`);
             }
         }
         return GameResponse.EmptyResponse(false);
