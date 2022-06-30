@@ -7,9 +7,11 @@ import { EmojiGameCommands } from "../../emoji-game-commands";
 import { GameResponse } from "../game-response";
 import { Player } from "./player";
 import { Plugin } from "../../plugin";
+import { Message } from "node-telegram-bot-api";
 
 export class GameIdentifier {
-    constructor(protected name: string, protected emoji: string, protected maxRounds: number) {}
+
+    constructor(protected name: string, protected emoji: string, protected maxRounds: number, protected stakes: number = 0) {}
 
     public get FullName(): string {
         return `${this.name} ${this.emoji}`;
@@ -23,8 +25,12 @@ export class GameTemplate extends GameIdentifier {
         return (msg === this.name.toLocaleLowerCase() || msg === this.emoji.toLocaleLowerCase() || msg === this.FullName.toLocaleLowerCase());
     }
 
-    public NewGame(rounds: number, stakes: number): Game {
-        return new Game(this.name, this.emoji, rounds > 0 ? rounds : this.maxRounds, stakes);
+    public Customize(rounds: number, stakes: number = 0): GameTemplate {
+        return new GameTemplate(this.name, this.emoji, rounds, stakes);
+    }
+
+    public NewGame(): Game {
+        return new Game(this.name, this.emoji, this.maxRounds, this.stakes);
     }
 
     public GetInfo(): string {
@@ -47,10 +53,6 @@ export class Game extends GameIdentifier {
     private players: Player[] = [];
     private tiedPlayersCache: Player[] = [];
 
-    public get Round(): number {
-        return this.round;
-    }
-
     public get Stakes(): number {
         return this.stakes;
     }
@@ -63,8 +65,8 @@ export class Game extends GameIdentifier {
         return this.hostId;
     }
 
-    constructor(name: string, emoji: string, maxRounds: number, private stakes: number) {
-        super(name, emoji, maxRounds);
+    constructor(name: string, emoji: string, maxRounds: number, stakes: number) {
+        super(name, emoji, maxRounds, stakes);
     }
 
     public AddPlayer(user: User, chat: Chat): string {
@@ -72,15 +74,17 @@ export class Game extends GameIdentifier {
             this.hostId = user.id;
         } if (this.findPlayerById(user.id)) {
             return "You can't join the same game twice, idiot!";
+        } if (this.GameState !== GameState.Initiated) {
+            return "The current game as already started.";
         } if (this.stakes > user.score) {
-            return "You can't afford to pay the stakes for this game."
-        } else {
-            if (this.stakes > 0) {
-                chat.alterUserScore(new AlterUserScoreArgs(user, this.stakes * -1, this.name, `Invested stakes into ${this.FullName}`));
-            }
-            this.players.push(new Player(user.id, user.name));
-            return `${user.name} joined the game of ${this.FullName}`;
+            return "You can't afford to pay the stakes for this game.";
         }
+        
+        if (this.stakes > 0) {
+            chat.alterUserScore(new AlterUserScoreArgs(user, this.stakes * -1, this.name, `Invested stakes into ${this.FullName}`));
+        }
+        this.players.push(new Player(user.id, user.name));
+        return `${user.name} joined the game of ${this.FullName}`;
     }
 
     public HandleMessage(data: ChatMessageEventArguments): GameResponse {
@@ -114,19 +118,20 @@ export class Game extends GameIdentifier {
         return GameResponse.EmptyResponse(false);
     }
 
-    public ReturnStakes(chat: Chat) {
-        for (const player of this.players) {
-            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(player.id)!, this.stakes, this.name, `Reimbursed stakes from ${this.FullName}`));
-        }
-    }
-
-    public SetStakes(chat: Chat, user: User, stakes: number) {
-        if (user.id !== this.HostId)
+    public SetStakes(msg: Message, chat: Chat, user: User) {
+        if (!msg.text)
+            return "";
+        if (user.id !== this.hostId)
             return "Only the host can set the stakes of a game.";
         if (this.players.length > 1)
             return "The stakes can't be set after players have joined.";
         if (this.stakes != 0)
             return "The stakes for this game are already set.";
+
+        const setStakesParams = msg.text!.replace("/" + EmojiGameCommands.SET_STAKES, "").trim().split(" ");
+        const stakes = parseInt(setStakesParams[0]);
+        if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
+            return "The stakes must be a valid number and payable with your current score.";
 
         this.stakes = stakes;        
         chat.alterUserScore(new AlterUserScoreArgs(user, this.stakes * -1, this.name, `Invested stakes into ${this.FullName}`));
@@ -142,6 +147,23 @@ export class Game extends GameIdentifier {
             }
         }
         return this.endRound(chat, playersToDisqualify.length > 0 ? "\n\nDisqualified player(s): " + playersToDisqualify.join(", ") : "");
+    }
+
+    public Cancel(chat: Chat, autoCancel: boolean): { message: string, canceled: boolean} {
+        if (!autoCancel && this.stakes > 0 && this.round > 0)
+            return { message:  "A game with stakes can't be canceled after the first round.", canceled: false};
+        let msg = autoCancel ? `The game of ${this.FullName} was canceled due to inactivity` : `Canceled the game of ${this.FullName}`;
+        if (this.Stakes > 0) {
+            this.returnStakes(chat);
+            msg += "\nAll stakes were returned."
+        }
+        return { message: msg, canceled: false};
+    }
+
+    private returnStakes(chat: Chat) {
+        for (const player of this.players) {
+            chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(player.id)!, this.stakes, this.name, `Reimbursed stakes from ${this.FullName}`));
+        }
     }
 
     private endRound(chat: Chat, disqualifiedMessage: string = ""): GameResponse {

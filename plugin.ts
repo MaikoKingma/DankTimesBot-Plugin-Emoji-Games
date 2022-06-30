@@ -8,7 +8,7 @@ import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-ty
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "./emoji-game-commands";
-import { GameResponse } from "./games";
+import { GameRegistry, GameResponse } from "./games";
 import { Game, GameState, GameTemplate } from "./games/round-based-games";
 import { SlotMachineGame } from "./games/slot-machine";
 
@@ -16,16 +16,11 @@ export class Plugin extends AbstractPlugin {
 
     public static readonly PLUGIN_NAME = "Emoji Games";
 
+    private gameRegistry: GameRegistry = new GameRegistry();
     private slotMachine: SlotMachineGame = new SlotMachineGame();
 
     private currentGame?: Game;
     private startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
-    private availableGames: GameTemplate[] = [
-        new GameTemplate("Hoops", Emoji.BasketballEmoji, 9),
-        new GameTemplate("Penalties", Emoji.FootballEmoji, 5),
-        new GameTemplate("Darts", Emoji.DartEmoji, 5)
-    ];
-    private waitingForResponse?: number;
 
     private roundTimeout: NodeJS.Timeout;
     private gameTimeout: NodeJS.Timeout;
@@ -36,15 +31,17 @@ export class Plugin extends AbstractPlugin {
         this.subscribeToPluginEvent(PluginEvent.ChatMessage, (data: ChatMessageEventArguments) => {
             if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
                 this.handleGameResponse(this.slotMachine.pullLever(data.msg.dice.value, data.chat, data.user), data);
-            } else if (this.waitingForResponse && this.waitingForResponse == data.user.id) {
-                this.waitingForResponse = undefined;
-                if (!data.msg.text)
-                    return;
-                const gameTemplate = this.selectGameByIndex(data.msg.text);
-                if (gameTemplate)
-                    data.botReplies = data.botReplies.concat(this.initiateGame(gameTemplate, data.user, data.chat));
             } else if (this.isGameRunning()) {
                 this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
+            } else {
+                const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
+                if (chooseGameResponse) {
+                    if (chooseGameResponse instanceof GameTemplate) {
+                        data.botReplies = data.botReplies.concat(this.initiateGame(chooseGameResponse, data.user, data.chat));
+                    }
+                    else
+                        data.botReplies = data.botReplies.concat(chooseGameResponse);
+                }
             }
         });
     }
@@ -81,7 +78,7 @@ export class Plugin extends AbstractPlugin {
             + `/${EmojiGameCommands.JOIN_GAME}\n`
             + `/${EmojiGameCommands.CANCEL_GAME}\n`
             + `/${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
-            + this.availableGames.map((game) => game.GetInfo()).join("\n\n")
+            + this.gameRegistry.GetInfo()
             + "\n\nAll games automatically start once the host takes the first shot.\n\n"
             + "<b>Stakes</b>\n\n"
             + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
@@ -99,59 +96,28 @@ export class Plugin extends AbstractPlugin {
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (this.isGameRunning())
             return "You can't start a when one is already in progress, moron...";
-        if (msg.text) {
-            const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => "@" + msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
-            mentions.forEach((mention) => msg.text = msg.text?.replace(mention, ""));
-            const chooseGameParams = msg.text!.replace("/" + EmojiGameCommands.CHOOSE_GAME, "").trim().split(" ");
-            if (chooseGameParams[0]) {
-                let gameTemplate = this.selectGameByIndex(chooseGameParams[0]);
-                if (!gameTemplate)
-                    gameTemplate = this.availableGames.find((game) => game.IdentifyGame(chooseGameParams[0]));
-                if (gameTemplate) {
-                    let stakes = 0;
-                    let rounds = -1;
-                    if (chooseGameParams[1]) {
-                        rounds = parseInt(chooseGameParams[1]);
-                        if (!rounds || rounds <= 0 || (rounds % 1 !== 0))
-                            return "The rounds must be a valid.";
-                    }
-                    if (chooseGameParams[2]) {
-                        stakes = parseInt(chooseGameParams[2]);
-                        if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
-                            return "The stakes must be a valid number and payable with your current score.";
-                    }
-                    return this.initiateGame(gameTemplate, user, chat, rounds, stakes, mentions);
-                }
+        const chooseGameResponse = this.gameRegistry.ChooseGame(msg, user);
+        if (chooseGameResponse) {
+            if (chooseGameResponse instanceof GameTemplate) {
+                const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => "@" + msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
+                mentions.forEach((mention) => msg.text = msg.text?.replace(mention, ""));
+                return this.initiateGame(chooseGameResponse, user, chat, mentions);
             }
+            else
+                return chooseGameResponse;
         }
-        
-        this.waitingForResponse = user.id;
-        return this.availableGames.map((game, index) => `[${index}] ${game.FullName}`).join("\n");
+        return "";
     }
 
     private setStakes(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (!this.isGameRunning())
             return "There is no game to set stakes on.";
-        const setStakesParams = msg.text!.replace("/" + EmojiGameCommands.SET_STAKES, "").trim().split(" ");
-        const stakes = parseInt(setStakesParams[0]);
-        if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
-            return "The stakes must be a valid number and payable with your current score.";
-        return this.currentGame!.SetStakes(chat, user, stakes);
-    }
-
-    private selectGameByIndex(msgText: string): GameTemplate | undefined {
-        const gameId = parseInt(msgText);
-        if (gameId >= 0 && gameId < this.availableGames.length) {
-            return this.availableGames[gameId];
-        }
-        return undefined;
+        return this.currentGame!.SetStakes(msg, chat, user);
     }
 
     private joinGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         if (!this.isGameRunning())
             return "There is no game to join.";
-        if (this.currentGame!.GameState !== GameState.Initiated)
-            return "The current game as already started."
         return this.currentGame!.AddPlayer(user, chat);
     }
 
@@ -160,32 +126,27 @@ export class Plugin extends AbstractPlugin {
             return "What do you expect me to cancel, theres nothing going on you fool!";
         if (user.id !== this.currentGame!.HostId)
             return "Only the host can cancel the game.";
-        if (this.currentGame!.Stakes > 0 && this.currentGame!.Round > 0)
-            return "A game with stakes can't be canceled after the first round.";
         return this.cancelGame(chat)
     }
 
     private cancelGame(chat: Chat, autoCancel: boolean = false): string {
-        let response = autoCancel ? `The game of ${this.currentGame!.FullName} was canceled due to inactivity` : `Canceled the game of ${this.currentGame!.FullName}`;
-        if (this.currentGame!.Stakes > 0) {
-            this.currentGame!.ReturnStakes(chat);
-            response += "\nAll stakes were returned."
-        }
-        this.resetGame();
-        return response;
+        const response = this.currentGame!.Cancel(chat, autoCancel);
+        if (response.canceled)
+            this.resetGame();
+        return response.message;
     }
 
     private isGameRunning(): boolean {
         return !!this.currentGame;
     }
 
-    private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, rounds: number = -1, stakes: number = 0, mentions: string[] = []): string {
+    private initiateGame(gameTemplate: GameTemplate, user: User, chat: Chat, mentions: string[] = []): string {
         this.resetGameTimeout(chat);
-        this.currentGame = gameTemplate.NewGame(rounds, stakes);
+        this.currentGame = gameTemplate.NewGame();
         this.currentGame.AddPlayer(user, chat);
         let response = `${user.name} ${mentions.length > 0 ? `challenged ${mentions.join(", ")} to` : "started"} a game of ${this.currentGame.FullName}${this.startingGameOptions}`;
         if (this.currentGame.Stakes > 0) {
-            response += `\n\nThey set the stakes to ${stakes}`;
+            response += `\n\nThey set the stakes to ${this.currentGame.Stakes}`;
         }
         return response;
     }
