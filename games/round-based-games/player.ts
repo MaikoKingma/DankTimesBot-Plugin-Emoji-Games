@@ -1,5 +1,5 @@
 import { Dice } from "node-telegram-bot-api";
-import { Emoji } from "./emoji";
+import { Emoji } from "../../emoji";
 
 export class Player {
 

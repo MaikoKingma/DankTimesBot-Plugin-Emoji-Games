@@ -1,11 +1,11 @@
 import { Message } from "node-telegram-bot-api";
-import { AlterUserScoreArgs } from "../../src/chat/alter-user-score-args";
-import { Chat } from "../../src/chat/chat";
-import { User } from "../../src/chat/user/user";
-import { EmojiGameCommands } from "./emoji-game-commands";
+import { AlterUserScoreArgs } from "../../../../src/chat/alter-user-score-args";
+import { Chat } from "../../../../src/chat/chat";
+import { User } from "../../../../src/chat/user/user";
+import { EmojiGameCommands } from "../../emoji-game-commands";
 import { EmojiGameUser as Player } from "./emoji-game-user";
-import { GameResponse } from "./game-response";
-import { Plugin } from "./plugin";
+import { GameResponse } from "../game-response";
+import { Plugin } from "../../plugin";
 import { SlotMachine } from "./slot-machine-scores";
 
 export class SlotMachineGame {

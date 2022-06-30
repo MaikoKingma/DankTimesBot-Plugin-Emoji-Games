@@ -1,6 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
 import { BotCommand } from "../../src/bot-commands/bot-command";
-import { BotCommandConfirmationQuestion } from "../../src/bot-commands/bot-command-confirmation-question";
 import { Chat } from "../../src/chat/chat";
 import { ChatSettingTemplate } from "../../src/chat/settings/chat-setting-template";
 import { User } from "../../src/chat/user/user";
@@ -9,9 +8,9 @@ import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-ty
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "./emoji-game-commands";
-import { GameResponse } from "./game-response";
-import { Game, GameState, GameTemplate } from "./games";
-import { SlotMachineGame } from "./slot-machine-game";
+import { GameResponse } from "./games";
+import { Game, GameState, GameTemplate } from "./games/round-based-games";
+import { SlotMachineGame } from "./games/slot-machine";
 
 export class Plugin extends AbstractPlugin {
 
