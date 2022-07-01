@@ -157,7 +157,7 @@ export class Game extends GameIdentifier {
             this.returnStakes(chat);
             msg += "\nAll stakes were returned."
         }
-        return { message: msg, canceled: false};
+        return { message: msg, canceled: true};
     }
 
     private returnStakes(chat: Chat) {
