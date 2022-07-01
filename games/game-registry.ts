@@ -28,24 +28,21 @@ export class GameRegistry {
 
     public ChooseGame(msg: Message, user: User): GameTemplate | string {
         if (msg.text) {
-            const regex = new RegExp(`\/${EmojiGameCommands.CHOOSE_GAME}(?<game> \S+|)(?<rounds> \d+|)(?<stakes> \d+|)`, "i");
-            const match = msg.text!.match(regex);
-            console.log(match);
-            if (match) {
-                if (match?.groups["game"]) {
-                    const gameId = match.groups["game"];
-                    let gameTemplate = this.selectGameByIndex(gameId);
+            if (msg.text!.startsWith(`/${EmojiGameCommands.CHOOSE_GAME}`)) {
+                const chooseGameParams = msg.text!.replace("/" + EmojiGameCommands.CHOOSE_GAME, "").trim().replace(/\s{2,}/, " ").split(" ");
+                if (chooseGameParams[0]) {
+                    let gameTemplate = this.selectGameByIndex(chooseGameParams[0]);
                     if (!gameTemplate)
-                        gameTemplate = this.availableGames.find((game) => game.IdentifyGame(gameId));
+                        gameTemplate = this.availableGames.find((game) => game.IdentifyGame(chooseGameParams[0]));
                     if (gameTemplate) {
                         let stakes = 0;
                         let rounds = -1;
-                        if (match?.groups["rounds"]) {
-                            rounds = parseInt(match?.groups["rounds"]);
+                        if (chooseGameParams[1]) {
+                            rounds = parseInt(chooseGameParams[1]);
                             if (!rounds || rounds <= 0 || (rounds % 1 !== 0))
                                 return "The rounds must be a valid.";
-                            if (match?.groups["stakes"]) {
-                                stakes = parseInt(match?.groups["stakes"]);
+                            if (chooseGameParams[2]) {
+                                stakes = parseInt(chooseGameParams[2]);
                                 if (!stakes || stakes <= 0 || (stakes % 1 !== 0) || user.score < stakes)
                                     return "The stakes must be a valid number and payable with your current score.";
                                 return gameTemplate.Customize(rounds, stakes);
