@@ -99,7 +99,7 @@ export class Plugin extends AbstractPlugin {
         const chooseGameResponse = this.gameRegistry.ChooseGame(msg, user);
         if (chooseGameResponse) {
             if (chooseGameResponse instanceof GameTemplate) {
-                const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => "@" + msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
+                const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
                 mentions.forEach((mention) => msg.text = msg.text?.replace(mention, ""));
                 return this.initiateGame(chooseGameResponse, user, chat, mentions);
             }
