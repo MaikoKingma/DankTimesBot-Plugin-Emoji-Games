@@ -29,22 +29,7 @@ export class Plugin extends AbstractPlugin {
     constructor() {
         super(Plugin.PLUGIN_NAME, "1.1.0");
 
-        this.subscribeToPluginEvent(PluginEvent.ChatMessage, (data: ChatMessageEventArguments) => {
-            if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
-                this.handleGameResponse(this.slotMachine.pullLever(data.msg.dice.value, data.chat, data.user), data);
-            } else if (this.isGameRunning()) {
-                this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
-            } else {
-                const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
-                if (chooseGameResponse) {
-                    if (chooseGameResponse instanceof GameTemplate) {
-                        data.botReplies = data.botReplies.concat(this.initiateGame(chooseGameResponse, data.user, data.chat));
-                    }
-                    else
-                        data.botReplies = data.botReplies.concat(chooseGameResponse);
-                }
-            }
-        });
+        this.subscribeToPluginEvent(PluginEvent.ChatMessage, this.OnChatMessage.bind(this));
     }
 
     /**
@@ -71,6 +56,29 @@ export class Plugin extends AbstractPlugin {
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
         return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineInfoCommand, setBetCommand];
+    }
+
+    private OnChatMessage(data: ChatMessageEventArguments) {
+        if (data.msg.forward_from) {
+            return;
+        }
+        // if (data.msg.dice) {
+        //     this.sendDice(data.chat.id, data.msg.dice.emoji);
+        // }
+        if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
+            this.handleGameResponse(this.slotMachine.pullLever(data.msg.dice.value, data.chat, data.user), data);
+        } else if (this.isGameRunning()) {
+            this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
+        } else {
+            const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
+            if (chooseGameResponse) {
+                if (chooseGameResponse instanceof GameTemplate) {
+                    data.botReplies = data.botReplies.concat(this.initiateGame(chooseGameResponse, data.user, data.chat));
+                }
+                else
+                    data.botReplies = data.botReplies.concat(chooseGameResponse);
+            }
+        }
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
