@@ -20,9 +20,7 @@ export class GameRegistry {
     public HandleMessage(msg: Message, user: User): GameTemplate | undefined {
         if (msg.text && this.waitingForResponse && this.waitingForResponse == user.id) {
             this.waitingForResponse = undefined;
-            const gameTemplate = this.selectGameByIndex(msg.text);
-            if (gameTemplate)
-                return gameTemplate;
+            return this.selectGameByIndex(msg.text);
         }
     }
 

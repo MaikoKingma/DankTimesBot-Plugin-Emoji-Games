@@ -1,5 +1,5 @@
 export class SlotMachineScore {
-    constructor(public values: string[], public payout: number = 0) {}
+    constructor(public values: string[]) {}
 }
 
 export class WinningCombination {
