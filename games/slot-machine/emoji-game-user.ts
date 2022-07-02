@@ -1,20 +1,19 @@
 export class EmojiGameUser {
     private multiplierTimeout: NodeJS.Timeout;
 
-    private winningsMultiplier:number = 1;
+    private consecutiveSpin: number = 0;
 
-    public get WinningsMultiplier(): number {
-        const currentMultiplier = this.winningsMultiplier;
-        if (this.winningsMultiplier === 1)
-            this.winningsMultiplier = 2;
-        else if (this.winningsMultiplier === 2)
-            this.winningsMultiplier = 4;
-        else if (this.winningsMultiplier === 4)
-            this.winningsMultiplier = 1;
-        if (this.winningsMultiplier !== 1) {
+    public get ConsecutiveSpin(): number {
+        const current = this.consecutiveSpin;
+        this.consecutiveSpin = this.consecutiveSpin + 1;
+        if (this.consecutiveSpin === 3) {
+            this.consecutiveSpin = 0;
+        }
+        if (this.consecutiveSpin != 0){
             this.startTimeout();
         }
-        return currentMultiplier;
+
+        return current;
     }
 
     constructor(public Id: number, private name: string, public Bet: number) {}
@@ -28,7 +27,7 @@ export class EmojiGameUser {
             clearTimeout(this.multiplierTimeout);
         }
         this.multiplierTimeout = setTimeout(() => {
-            this.winningsMultiplier = 1;
+            this.consecutiveSpin = 0;
         }, 10 * 60 * 1000);
     }
 }

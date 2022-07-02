@@ -7,24 +7,13 @@ import { EmojiGameUser as Player } from "./emoji-game-user";
 import { GameResponse } from "../game-response";
 import { Plugin } from "../../plugin";
 import { SlotMachine } from "./slot-machine-scores";
+import { SlotMachineData } from "./slot-machine-data";
 
 export class SlotMachineGame {
 
-    private players: Player[] = [];
-    
-    // TODO serialize
-    private pot: number = 0;
-    private timesBet: number = 0;
-    private totalBetAmount: number = 0;
-    private totalWon: number = 0;
-    private totalLost: number = 0;
+    private data: SlotMachineData = new SlotMachineData();
 
-    private updatePayoutStats(payout: number) {
-        if (payout > 0)
-            this.totalWon += payout;
-        else 
-            this.totalLost += payout;
-    }
+    private players: Player[] = [];
 
     private readonly DEFAULT_BET = 100;
 
@@ -33,17 +22,24 @@ export class SlotMachineGame {
         const bet = player ? player.Bet : this.DEFAULT_BET;
         if (bet > user.score)
             return GameResponse.SlotMachineResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
-        const multiplier = player?.WinningsMultiplier;
+        const consecutiveSpin = player.ConsecutiveSpin;
+        let multiplier = 1;
+        if (consecutiveSpin == 1) {
+            multiplier = 2;
+        } else if (consecutiveSpin == 2) {
+            multiplier = 4;
+        }
         const outcome = Math.round(this.getOutcome(value, bet, multiplier));
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
+        const stats = `\nSpin: ${consecutiveSpin + 1}, Multiplier ${multiplier}x`
         if (outcome > 0) {
-            return GameResponse.SlotMachineResponse(`Congratulations!! ${user.name} won ${outcome}`);
+            return GameResponse.SlotMachineResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {
-            return GameResponse.SlotMachineResponse(`${user.name} lost ${outcome}`);
+            return GameResponse.SlotMachineResponse(`${user.name} lost ${outcome * -1}${stats}`);
         } else {
-            return GameResponse.SlotMachineResponse("Welp at least you didn't lose anything.");
+            return GameResponse.SlotMachineResponse(`Welp at least you didn't lose anything.${stats}`);
         }
     }
 
@@ -69,12 +65,7 @@ export class SlotMachineGame {
     }
     
     public GetStats(chat: Chat, user: User, msg: Message, match: string): string {
-        return `🎰 <b>Slot Machine Stats</b> 🎰\n\n`
-            + `Pot: ${this.pot}\n`
-            + `Times Bet: ${this.timesBet}\n`
-            + `Total Bet Amount: ${this.totalBetAmount}\n`
-            + `Total Won: ${this.totalWon}\n`
-            + `Total Lost: ${this.totalLost}`;
+        return this.data.ToString();
     }
 
     public GetInfo(): string {
@@ -86,39 +77,28 @@ export class SlotMachineGame {
             + "- All bets go into the pot\n"
             + "- Consecutive spins payout more (second spin = 2x payout, third spin = 4x payout)\n"
             + "- After the third consecutive spin the spin counter is reset\n"
-            + "- After 10 minutes of inactivity the spin counter is reset\n\n"
+            + "- After 10 minutes of inactivity the spin counter is reset\n"
+            + "- Consecutive spin multiplier does not apply to winning the pot\n"
+            + "- The maximum amount that can be won from the pot is 1000 x bet\n\n"
             + "<pre>"
-            + "| Outcome  | Payout                    |\n"
-            + "|----------|:---------------------------:|\n"
-            + `| 3 x bar  | Entire pot (max 1000 * bet) |\n`
-            + "| 3 x 7    | Double the bet              |\n"
-            + "| 🍋🍋🍋  | Whole bet                   |\n"
-            + "| 🍒🍒🍒  | Whole bet                   |\n"
-            + "| 🍒🍒        | 1/2 bet                     |\n"
-            + "| 🍒               | 1/4 bet                     |"
+            + "| Outcome  | Payout         |\n"
+            + "|----------|:--------------:|\n"
+            + `| 3 x bar  | Entire pot     |\n`
+            + "| 3 x 7    | Double the bet |\n"
+            + "| 🍋🍋🍋  | Whole bet      |\n"
+            + "| 🍒🍒🍒  | Whole bet      |\n"
+            + "| 🍒🍒        | 1/2 bet        |\n"
+            + "| 🍒               | 1/4 bet        |"
             + "</pre>";
     }
 
     private getOutcome(value: number, bet: number, payoutMultiplier: number): number {
-        this.timesBet++;
-        this.totalBetAmount += bet;
         const multiplier = SlotMachine.Spin(value);
         if (multiplier === -1) {
-            let payout = this.pot;
-            const maxPayout = 1000 * bet;
-            if (payout > maxPayout) {
-                payout = maxPayout;
-                this.pot = this.pot - maxPayout;
-            } else {
-                this.pot = 0;
-            }
-            payout = payout * payoutMultiplier;
-            this.updatePayoutStats(payout);
+            const payout = this.data.WinPot(bet);
             return payout;
         } else {
-            this.pot += bet;
-            const payout = ((multiplier * bet) * payoutMultiplier) - bet;
-            this.updatePayoutStats(payout);
+            const payout = this.data.Win(bet, multiplier, payoutMultiplier);
             return payout;
         }
     }
