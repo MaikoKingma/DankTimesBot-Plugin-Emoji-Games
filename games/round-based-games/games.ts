@@ -2,7 +2,7 @@ import { AlterUserScoreArgs } from "../../../../src/chat/alter-user-score-args";
 import { Chat } from "../../../../src/chat/chat";
 import { User } from "../../../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
-import { Emoji } from "../../emoji";
+import { Emoji } from "../emoji";
 import { EmojiGameCommands } from "../../emoji-game-commands";
 import { GameResponse } from "../game-response";
 import { Player } from "./player";

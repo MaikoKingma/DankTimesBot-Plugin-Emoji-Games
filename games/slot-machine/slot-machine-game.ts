@@ -15,11 +15,15 @@ export class SlotMachineGame {
 
     private players: Player[] = [];
 
-    private readonly DEFAULT_BET = 100;
+    private static readonly DEFAULT_BET = 100;
 
-    public pullLever(value: number, chat: Chat, user: User): GameResponse {
+    public get Data(): SlotMachineData {
+        return this.data;
+    }
+
+    public PullLever(value: number, chat: Chat, user: User): GameResponse {
         const player = this.findPlayer(user);
-        const bet = player ? player.Bet : this.DEFAULT_BET;
+        const bet = player ? player.Bet : SlotMachineGame.DEFAULT_BET;
         if (bet > user.score)
             return GameResponse.SlotMachineResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
         const consecutiveSpin = player.ConsecutiveSpin;
@@ -52,7 +56,7 @@ export class SlotMachineGame {
             return `💰 Current bet amount ${player.Bet}`;
         if (!bet || bet <= 0 || (bet % 1 !== 0))
             return `${user.name} doesn't know how numbers work`;
-        let currentBet = this.DEFAULT_BET;
+        let currentBet = SlotMachineGame.DEFAULT_BET;
         currentBet = player.Bet;
         player.Bet = bet;
         if (currentBet < bet) {
@@ -64,14 +68,34 @@ export class SlotMachineGame {
         }
     }
     
-    public GetStats(chat: Chat, user: User, msg: Message, match: string): string {
+    public GetStats(): string {
         return this.data.ToString();
     }
 
-    public GetInfo(): string {
+    private getOutcome(value: number, bet: number, payoutMultiplier: number): number {
+        const multiplier = SlotMachine.Spin(value);
+        if (multiplier === -1) {
+            const payout = this.data.WinPot(bet);
+            return payout;
+        } else {
+            const payout = this.data.Win(bet, multiplier, payoutMultiplier);
+            return payout;
+        }
+    }
+
+    private findPlayer(user: User): Player {
+        let player = this.players.find(player => user.id === player.Id);
+        if (!player) {
+            player = new Player(user.id, user.name, SlotMachineGame.DEFAULT_BET);
+            this.players.push(player);
+        }
+        return player;
+    }
+
+    public static GetInfo(): string {
         return `🎰 <b>Slot Machine</b> 🎰\n\n`
             + "The Slot Machine emoji can be send at any time and the default bet will always be paid if you can afford it.\n\n"
-            + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${this.DEFAULT_BET})\n`
+            + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.DEFAULT_BET})\n`
             + `/${EmojiGameCommands.SLOT_MACHINE_STATS} Displays stats of the slot machine\n\n`
             + "Rules:\n"
             + "- All bets go into the pot\n"
@@ -90,25 +114,5 @@ export class SlotMachineGame {
             + "| 🍒🍒        | 1/2 bet        |\n"
             + "| 🍒               | 1/4 bet        |"
             + "</pre>";
-    }
-
-    private getOutcome(value: number, bet: number, payoutMultiplier: number): number {
-        const multiplier = SlotMachine.Spin(value);
-        if (multiplier === -1) {
-            const payout = this.data.WinPot(bet);
-            return payout;
-        } else {
-            const payout = this.data.Win(bet, multiplier, payoutMultiplier);
-            return payout;
-        }
-    }
-
-    private findPlayer(user: User): Player {
-        let player = this.players.find(player => user.id === player.Id);
-        if (!player) {
-            player = new Player(user.id, user.name, this.DEFAULT_BET);
-            this.players.push(player);
-        }
-        return player;
     }
 }
