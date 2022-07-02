@@ -17,11 +17,11 @@ export class Plugin extends AbstractPlugin {
 
     public static readonly PLUGIN_NAME = "Emoji Games";
 
-    private gameRegistry: GameRegistry = new GameRegistry();
-    private slotMachine: SlotMachineGame = new SlotMachineGame();
+    private readonly gameRegistry: GameRegistry = new GameRegistry();
+    private readonly slotMachine: SlotMachineGame = new SlotMachineGame();
 
     private currentGame?: Game;
-    private startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
+    private readonly startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
 
     private roundTimeout: NodeJS.Timeout;
     private gameTimeout: NodeJS.Timeout;

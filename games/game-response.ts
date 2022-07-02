@@ -5,8 +5,6 @@ export class GameResponse {
     public IsReply: boolean = false;
     public ValidInteraction: boolean = false;
 
-    private constructor() {}
-
     public static PlayerError(msg: string): GameResponse {
         const response = new GameResponse();
         response.Msg = msg;

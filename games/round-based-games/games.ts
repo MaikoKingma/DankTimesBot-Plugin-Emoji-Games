@@ -169,7 +169,10 @@ export class Game extends GameIdentifier {
     private endRound(chat: Chat, disqualifiedMessage: string = ""): GameResponse {
         const playerRanking = this.sortPlayers();
         const leaderboard = this.formatLeaderboard(playerRanking);
-        if (this.round >= this.maxRounds || this.players.every((player) => player.Disqualified)) {
+        if (this.players.every((player) => player.Disqualified)) {
+            this.gameState = GameState.Ended;
+            return GameResponse.RoundTransition(`🐌 The game has been ended because all players were disqualified. 🐌\n\n${leaderboard}${disqualifiedMessage}`);
+        } else if (this.round >= this.maxRounds) {
             this.tiedPlayersCache = this.getTiedPlayers(playerRanking);
             if (this.tiedPlayersCache.length > 0) {
                 return GameResponse.RoundTransition(`Players ${this.tiedPlayersCache.map((player) => player.name).join(", ")} have to take another shot for the tiebreaker\n\n${leaderboard}${disqualifiedMessage}`)
