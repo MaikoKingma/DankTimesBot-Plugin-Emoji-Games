@@ -2,7 +2,7 @@ import { Message } from "node-telegram-bot-api";
 import { User } from "../../../src/chat/user/user";
 import { Emoji } from "../emoji";
 import { EmojiGameCommands } from "../emoji-game-commands";
-import { GameTemplate } from "./round-based-games";
+import { GameTemplate } from "./round-based-games/games";
 
 export class GameRegistry {
     private readonly availableGames: GameTemplate[] = [

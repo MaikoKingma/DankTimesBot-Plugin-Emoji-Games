@@ -8,9 +8,10 @@ import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-ty
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "./emoji-game-commands";
-import { GameRegistry, GameResponse } from "./games";
-import { Game, GameState, GameTemplate } from "./games/round-based-games";
-import { SlotMachineGame } from "./games/slot-machine";
+import { GameRegistry } from "./games/game-registry";
+import { GameResponse } from "./games/game-response";
+import { Game, GameState, GameTemplate } from "./games/round-based-games/games";
+import { SlotMachineGame } from "./games/slot-machine/slot-machine-game";
 
 export class Plugin extends AbstractPlugin {
 
