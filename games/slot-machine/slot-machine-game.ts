@@ -11,8 +11,6 @@ import { SlotMachineData } from "./slot-machine-data";
 
 export class SlotMachineGame {
 
-    private data: SlotMachineData = new SlotMachineData();
-
     private players: Player[] = [];
 
     private static readonly DEFAULT_BET = 100;
@@ -20,6 +18,8 @@ export class SlotMachineGame {
     public get Data(): SlotMachineData {
         return this.data;
     }
+    
+    constructor(private data: SlotMachineData = new SlotMachineData()) {}
 
     public PullLever(value: number, chat: Chat, user: User): GameResponse {
         const player = this.findPlayer(user);
@@ -66,10 +66,6 @@ export class SlotMachineGame {
         } else {
             return `${user.name} is lost`;
         }
-    }
-    
-    public GetStats(): string {
-        return this.data.ToString();
     }
 
     private getOutcome(value: number, bet: number, payoutMultiplier: number): number {

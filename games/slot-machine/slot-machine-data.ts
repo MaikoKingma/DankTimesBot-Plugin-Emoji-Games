@@ -1,25 +1,25 @@
 export class SlotMachineData {
-    private pot: number = 0;
-    private timesBet: number = 0;
-    private totalBetAmount: number = 0;
-    private totalWon: number = 0;
-    private totalLost: number = 0;
+    public Pot: number = 0;
+    public TimesBet: number = 0;
+    public TotalBetAmount: number = 0;
+    public TotalWon: number = 0;
+    public TotalLost: number = 0;
 
     public WinPot(bet: number): number {
-        let payout = this.pot;
+        let payout = this.Pot;
         const maxPayout = 1000 * bet;
         if (payout > maxPayout) {
             payout = maxPayout;
-            this.pot = this.pot - maxPayout;
+            this.Pot = this.Pot - maxPayout;
         } else {
-            this.pot = 0;
+            this.Pot = 0;
         }
         this.updateStats(bet, payout);
         return payout;
     }
 
     public Win(bet: number, scoreMultiplier: number, payoutMultiplier: number): number {
-        this.pot += bet;
+        this.Pot += bet;
         const payout = ((scoreMultiplier * bet) * payoutMultiplier) - bet;
         this.updateStats(bet, payout);
         return payout;
@@ -27,19 +27,19 @@ export class SlotMachineData {
 
     public ToString(): string {
         return `🎰 <b>Slot Machine Stats</b> 🎰\n\n`
-            + `Pot: ${this.pot}\n`
-            + `Times Bet: ${this.timesBet}\n`
-            + `Total Bet Amount: ${this.totalBetAmount}\n`
-            + `Total Won: ${this.totalWon}\n`
-            + `Total Lost: ${this.totalLost * -1}`;
+            + `Pot: ${this.Pot}\n`
+            + `Times Bet: ${this.TimesBet}\n`
+            + `Total Bet Amount: ${this.TotalBetAmount}\n`
+            + `Total Won: ${this.TotalWon}\n`
+            + `Total Lost: ${this.TotalLost * -1}`;
     }
 
     private updateStats(bet: number, payout: number) {
-        this.timesBet++;
-        this.totalBetAmount += bet;
+        this.TimesBet++;
+        this.TotalBetAmount += bet;
         if (payout > 0)
-            this.totalWon += payout;
+            this.TotalWon += payout;
         else 
-            this.totalLost += payout;
+            this.TotalLost += payout;
     }
 }

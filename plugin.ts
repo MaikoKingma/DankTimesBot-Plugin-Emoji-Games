@@ -7,14 +7,18 @@ import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/e
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { EmojiGameCommands } from "./emoji-game-commands";
+import { FileIOHelper } from "./FileIOHelper";
 import { GameHost } from "./games/game-host";
 import { GameRegistry } from "./games/game-registry";
 import { GameTemplate } from "./games/round-based-games/games";
+import { SlotMachineData } from "./games/slot-machine/slot-machine-data";
 import { SlotMachineGame } from "./games/slot-machine/slot-machine-game";
 
 export class Plugin extends AbstractPlugin {
 
     public static readonly PLUGIN_NAME = "Emoji Games";
+    
+    private readonly fileIOHelper = new FileIOHelper(this.loadDataFromFile.bind(this), this.saveDataToFile.bind(this));
 
     private gameHosts: Map<number, GameHost> = new Map<number, GameHost>();
 
@@ -23,7 +27,10 @@ export class Plugin extends AbstractPlugin {
     constructor() {
         super(Plugin.PLUGIN_NAME, "1.1.0");
 
-        this.subscribeToPluginEvent(PluginEvent.ChatMessage, this.OnChatMessage.bind(this));
+        this.subscribeToPluginEvent(PluginEvent.ChatMessage, this.onChatMessage.bind(this));
+        this.subscribeToPluginEvent(PluginEvent.BotShutdown, this.persistData.bind(this));
+        this.subscribeToPluginEvent(PluginEvent.HourlyTick, this.persistData.bind(this));
+        this.subscribeToPluginEvent(PluginEvent.BotStartup, this.onPluginStartup.bind(this));
     }
 
     /**
@@ -42,33 +49,54 @@ export class Plugin extends AbstractPlugin {
         const joinGameCommand = new BotCommand([EmojiGameCommands.JOIN_GAME], "", this.joinGame.bind(this));
         const stopGameCommand = new BotCommand([EmojiGameCommands.CANCEL_GAME], "", this.cancelGameByUser.bind(this));
         const setStakesCommand = new BotCommand([EmojiGameCommands.SET_STAKES], "", this.setStakes.bind(this));
-        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string) => this.GetGameHost(chat.id).GetSlotMachineStats()).bind(this));
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string) => this.getGameHost(chat.id).GetSlotMachineData().ToString()).bind(this));
         const setBetCommand = new BotCommand([EmojiGameCommands.SET_SLOT_MACHINE_BET], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string): string => {
-            this.sendMessage(chat.id, this.GetGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
+            this.sendMessage(chat.id, this.getGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
         }).bind(this));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
         return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineInfoCommand, setBetCommand];
     }
+
+    private persistData() {
+        const data: Map<number, SlotMachineData> = new Map<number, SlotMachineData>();
+        console.log("Map: " + JSON.stringify(this.gameHosts));
+        for (const chatId of this.gameHosts.keys()) {
+            console.log("Chat: " + chatId);
+            console.log("game: " + this.gameHosts.get(chatId));
+            data.set(chatId, this.gameHosts.get(chatId)!.GetSlotMachineData())
+        }
+        console.log(data);
+        this.fileIOHelper.PersistSlotMachineData(data);
+    }
     
-    private GetGameHost(chatId: number): GameHost {
+    private getGameHost(chatId: number): GameHost {
         let gameHost = this.gameHosts.get(chatId);
+        console.log("Get host: " + gameHost);
         if (!gameHost) {
-            gameHost = new GameHost(chatId, this.sendMessage.bind(this));
+            gameHost = new GameHost(this.sendMessage.bind(this), this.fileIOHelper.GetSlotMachineData(chatId));
             this.gameHosts.set(chatId, gameHost);
         }
+        console.log("All hosts: " + this.gameHosts);
         return gameHost;
     }
 
-    private OnChatMessage(data: ChatMessageEventArguments) {
+    private onPluginStartup() {
+        console.log("onstartup");
+        this.fileIOHelper.LoadSlotMachineData();
+    }
+
+    private onChatMessage(data: ChatMessageEventArguments) {
+        console.log("on message");
         if (data.msg.forward_from) {
             return;
         }
         // if (data.msg.dice) {
         //     this.sendDice(data.chat.id, data.msg.dice.emoji);
         // }
-        const gameHost = this.GetGameHost(data.chat.id);
+        const gameHost = this.getGameHost(data.chat.id);
+        console.log(gameHost);
         if (!gameHost.HandleMessage(data)) {
             const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
             if (chooseGameResponse) {
@@ -103,7 +131,7 @@ export class Plugin extends AbstractPlugin {
     }
 
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        const gameHost = this.GetGameHost(chat.id);
+        const gameHost = this.getGameHost(chat.id);
         if (gameHost.IsGameRunning())
             return "You can't start a when one is already in progress, moron...";
         const chooseGameResponse = this.gameRegistry.ChooseGame(msg, user);
@@ -120,14 +148,14 @@ export class Plugin extends AbstractPlugin {
     }
 
     private setStakes(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        return this.GetGameHost(chat.id).SetStakes(msg, chat, user);
+        return this.getGameHost(chat.id).SetStakes(msg, chat, user);
     }
 
     private joinGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        return this.GetGameHost(chat.id).JoinGame(user, chat);
+        return this.getGameHost(chat.id).JoinGame(user, chat);
     }
 
     private cancelGameByUser(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        return this.GetGameHost(chat.id).CancelGameByUser(user, chat);
+        return this.getGameHost(chat.id).CancelGameByUser(user, chat);
     }
 }

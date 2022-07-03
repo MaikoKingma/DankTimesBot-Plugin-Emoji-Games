@@ -7,10 +7,11 @@ import { EmojiGameCommands } from "../emoji-game-commands";
 import { GameResponse } from "./game-response";
 import { Game, GameState, GameTemplate } from "./round-based-games/games";
 import { SlotMachineGame } from "./slot-machine/slot-machine-game";
+import { SlotMachineData } from "./slot-machine/slot-machine-data";
 
 export class GameHost {
     
-    private readonly slotMachine: SlotMachineGame = new SlotMachineGame();
+    private readonly slotMachine: SlotMachineGame;
 
     private currentGame?: Game;
     private readonly startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
@@ -18,9 +19,11 @@ export class GameHost {
     private roundTimeout: NodeJS.Timeout;
     private gameTimeout: NodeJS.Timeout;
 
-    constructor (private chatId: number,
-        private readonly sendMessage: (chatId: number, htmlMessage: string, replyToMessageId?: number, forceReply?: boolean, disableWebPagePreview?: boolean) => Promise<void | Message>
-        ) {}
+    constructor (private readonly sendMessage: (chatId: number, htmlMessage: string, replyToMessageId?: number, forceReply?: boolean, disableWebPagePreview?: boolean) => Promise<void | Message>,
+        slotMachineData: SlotMachineData = new SlotMachineData()
+    ) {
+        this.slotMachine = new SlotMachineGame(slotMachineData);
+    }
 
     public HandleMessage(data: ChatMessageEventArguments):boolean {
         if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {8
@@ -33,12 +36,12 @@ export class GameHost {
         return false;
     }
 
-    public GetSlotMachineStats(): string {
-        return this.slotMachine.GetStats();
-    }
-
     public SetBet(user: User, msg: Message): string {
         return this.slotMachine.SetBet(user, msg);
+    }
+
+    public GetSlotMachineData(): SlotMachineData {
+        return this.slotMachine.Data;
     }
 
     public SetStakes(msg: Message, chat: Chat, user: User): string {
