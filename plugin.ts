@@ -60,35 +60,30 @@ export class Plugin extends AbstractPlugin {
     }
 
     private persistData() {
+        const chatIds = Array.from(this.gameHosts.keys());
         const data: Map<number, SlotMachineData> = new Map<number, SlotMachineData>();
-        console.log("Map: " + JSON.stringify(this.gameHosts));
-        for (const chatId of this.gameHosts.keys()) {
-            console.log("Chat: " + chatId);
-            console.log("game: " + this.gameHosts.get(chatId));
-            data.set(chatId, this.gameHosts.get(chatId)!.GetSlotMachineData())
+        for (const chatId of chatIds) {
+            const gameHost = this.gameHosts.get(chatId);
+            const slotMachineData = gameHost!.GetSlotMachineData();
+            data.set(chatId, slotMachineData)
         }
-        console.log(data);
         this.fileIOHelper.PersistSlotMachineData(data);
     }
     
     private getGameHost(chatId: number): GameHost {
         let gameHost = this.gameHosts.get(chatId);
-        console.log("Get host: " + gameHost);
         if (!gameHost) {
             gameHost = new GameHost(this.sendMessage.bind(this), this.fileIOHelper.GetSlotMachineData(chatId));
             this.gameHosts.set(chatId, gameHost);
         }
-        console.log("All hosts: " + this.gameHosts);
         return gameHost;
     }
 
     private onPluginStartup() {
-        console.log("onstartup");
         this.fileIOHelper.LoadSlotMachineData();
     }
 
     private onChatMessage(data: ChatMessageEventArguments) {
-        console.log("on message");
         if (data.msg.forward_from) {
             return;
         }
@@ -96,7 +91,6 @@ export class Plugin extends AbstractPlugin {
         //     this.sendDice(data.chat.id, data.msg.dice.emoji);
         // }
         const gameHost = this.getGameHost(data.chat.id);
-        console.log(gameHost);
         if (!gameHost.HandleMessage(data)) {
             const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
             if (chooseGameResponse) {
