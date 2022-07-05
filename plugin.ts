@@ -64,9 +64,9 @@ export class Plugin extends AbstractPlugin {
     }
 
     private OnChatMessage(data: ChatMessageEventArguments) {
-        // if (data.msg.forward_from) {
-        //     return;
-        // }
+        if (data.msg.forward_from) {
+            return;
+        }
         // if (data.msg.dice) {
         //     this.sendDice(data.chat.id, data.msg.dice.emoji);
         // }
