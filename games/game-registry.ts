@@ -3,6 +3,7 @@ import { User } from "../../../src/chat/user/user";
 import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "../emoji-game-commands";
 import { GameTemplate } from "./round-based-games/games";
+import { GameResponse } from "./game-response";
 
 export class GameRegistry {
     private readonly availableGames: GameTemplate[] = [
@@ -18,6 +19,8 @@ export class GameRegistry {
     }
 
     public HandleMessage(msg: Message, user: User): GameTemplate | undefined {
+        if (this.martonCheck(user.id))
+            return undefined;
         if (msg.text && this.waitingForResponse && this.waitingForResponse == user.id) {
             this.waitingForResponse = undefined;
             return this.selectGameByIndex(msg.text);
@@ -66,5 +69,9 @@ export class GameRegistry {
             return this.availableGames[gameId];
         }
         return undefined;
+    }
+
+    private martonCheck(userId: number): boolean {
+        return userId === 100805902;
     }
 }

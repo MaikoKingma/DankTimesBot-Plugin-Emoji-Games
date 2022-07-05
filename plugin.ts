@@ -67,10 +67,6 @@ export class Plugin extends AbstractPlugin {
         // if (data.msg.forward_from) {
         //     return;
         // }
-        if (this.martonCheck(data.user.id)) {
-            data.botReplies = data.botReplies.concat(this.martonResponse);
-            return;
-        }
         // if (data.msg.dice) {
         //     this.sendDice(data.chat.id, data.msg.dice.emoji);
         // }
@@ -81,8 +77,6 @@ export class Plugin extends AbstractPlugin {
                 if (chooseGameResponse instanceof GameTemplate) {
                     data.botReplies = data.botReplies.concat(gameHost.InitiateGame(chooseGameResponse, data.user, data.chat));
                 }
-                else
-                    data.botReplies = data.botReplies.concat(chooseGameResponse);
             }
         }
     }

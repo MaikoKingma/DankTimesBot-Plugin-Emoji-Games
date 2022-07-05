@@ -10,6 +10,7 @@ import { SlotMachineGame } from "./slot-machine/slot-machine-game";
 
 export class GameHost {
     
+    private readonly martonResponse: string = "Please take some time to read the info (/emojigames) to understand game and its rules. Also don't forget that you can make issues on the github board if you find anything broken."
     private readonly slotMachine: SlotMachineGame = new SlotMachineGame();
 
     private currentGame?: Game;
@@ -23,10 +24,18 @@ export class GameHost {
         ) {}
 
     public HandleMessage(data: ChatMessageEventArguments):boolean {
-        if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {8
+        if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
+            if (this.martonCheck(data.user.id)) {
+                this.sendMessage(data.chat.id, this.martonResponse);
+                return true;
+            }
             this.handleGameResponse(this.slotMachine.PullLever(data.msg.dice.value, data.chat, data.user), data);
             return true;
         } else if (this.IsGameRunning()) {
+            if (this.martonCheck(data.user.id)) {
+                this.sendMessage(data.chat.id, this.martonResponse);
+                return true;
+            }
             this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
             return true;
         }
@@ -59,6 +68,10 @@ export class GameHost {
         if (user.id !== this.currentGame!.HostId)
             return "Only the host can cancel the game.";
         return this.cancelGame(chat);
+    }
+
+    private martonCheck(userId: number): boolean {
+        return userId === 100805902;
     }
 
     private cancelGame(chat: Chat, autoCancel: boolean = false): string {
