@@ -25,7 +25,7 @@ export class SlotMachineData {
         return payout;
     }
 
-    public ToString(): string {
+    public Print(): string {
         return `🎰 <b>Slot Machine Stats</b> 🎰\n\n`
             + `Pot: ${this.Pot}\n`
             + `Times Bet: ${this.TimesBet}\n`

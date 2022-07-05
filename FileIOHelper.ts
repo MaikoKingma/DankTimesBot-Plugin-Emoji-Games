@@ -1,29 +1,37 @@
+import * as fs from "fs";
 import { SlotMachineData } from "./games/slot-machine/slot-machine-data";
-import { Plugin } from "./plugin";
 
 export class FileIOHelper {
 
-    private static readonly SLOT_MACHINE_DATA_FILENAME = "slot-machine-data.json";
 
-    private slotMachineData: Map<number, SlotMachineData>;
+    private readonly dtbDataFolder = "./data/";
+    private readonly emojiGameDataFolder = "emoji-games/";
+    private readonly dataFilename = "slot-machine-data-";
 
     constructor(
         private readonly loadDataFromFile: <T>(fileName: string) => T | null,
-        private readonly saveDataToFile: <T>(fileName: string, data: any) => void) {}
+        private readonly saveDataToFile: <T>(fileName: string, data: any) => void) {
+            if (!fs.existsSync(this.dtbDataFolder + this.emojiGameDataFolder)) {
+                fs.mkdirSync(this.dtbDataFolder + this.emojiGameDataFolder);
+            }
+        }
 
     public PersistSlotMachineData(data: Map<number, SlotMachineData>): void {
-        this.saveDataToFile<Map<number, SlotMachineData>>(FileIOHelper.SLOT_MACHINE_DATA_FILENAME, data);
+        const chatIds = Array.from(data.keys());
+        for (const chatId of chatIds) {
+            this.saveDataToFile<SlotMachineData>(this.getSlotMachineDataFileName(chatId), data.get(chatId));
+        }
     }
 
     public GetSlotMachineData(chatId: number): SlotMachineData {
-        let data = this.slotMachineData.get(chatId);
-        return data ? data : new SlotMachineData();
+        const data = new SlotMachineData();
+        let json = this.loadDataFromFile<SlotMachineData>(this.getSlotMachineDataFileName(chatId));
+        if (json)
+            Object.assign(data, json);
+        return data;
     }
 
-    public LoadSlotMachineData() {
-        let data = this.loadDataFromFile<Map<number, SlotMachineData>>(FileIOHelper.SLOT_MACHINE_DATA_FILENAME);
-        if (!data)
-            data = new Map<number, SlotMachineData>();
-        this.slotMachineData = data;
+    private getSlotMachineDataFileName(chatId: number) {
+        return `${this.emojiGameDataFolder}${this.dataFilename}${chatId}.json`;
     }
 }

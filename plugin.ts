@@ -30,7 +30,6 @@ export class Plugin extends AbstractPlugin {
         this.subscribeToPluginEvent(PluginEvent.ChatMessage, this.onChatMessage.bind(this));
         this.subscribeToPluginEvent(PluginEvent.BotShutdown, this.persistData.bind(this));
         this.subscribeToPluginEvent(PluginEvent.HourlyTick, this.persistData.bind(this));
-        this.subscribeToPluginEvent(PluginEvent.BotStartup, this.onPluginStartup.bind(this));
     }
 
     /**
@@ -49,7 +48,7 @@ export class Plugin extends AbstractPlugin {
         const joinGameCommand = new BotCommand([EmojiGameCommands.JOIN_GAME], "", this.joinGame.bind(this));
         const stopGameCommand = new BotCommand([EmojiGameCommands.CANCEL_GAME], "", this.cancelGameByUser.bind(this));
         const setStakesCommand = new BotCommand([EmojiGameCommands.SET_STAKES], "", this.setStakes.bind(this));
-        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string) => this.getGameHost(chat.id).GetSlotMachineData().ToString()).bind(this));
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", this.getSlotMachineStats.bind(this));
         const setBetCommand = new BotCommand([EmojiGameCommands.SET_SLOT_MACHINE_BET], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string): string => {
             this.sendMessage(chat.id, this.getGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
@@ -77,10 +76,6 @@ export class Plugin extends AbstractPlugin {
             this.gameHosts.set(chatId, gameHost);
         }
         return gameHost;
-    }
-
-    private onPluginStartup() {
-        this.fileIOHelper.LoadSlotMachineData();
     }
 
     private onChatMessage(data: ChatMessageEventArguments) {
@@ -143,6 +138,10 @@ export class Plugin extends AbstractPlugin {
 
     private setStakes(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return this.getGameHost(chat.id).SetStakes(msg, chat, user);
+    }
+
+    private getSlotMachineStats(chat: Chat, user: User, msg: TelegramBot.Message, match: string) {
+        return this.getGameHost(chat.id).GetSlotMachineData().Print();
     }
 
     private joinGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
