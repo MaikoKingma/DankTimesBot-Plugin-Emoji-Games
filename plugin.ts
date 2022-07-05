@@ -64,9 +64,9 @@ export class Plugin extends AbstractPlugin {
     }
 
     private OnChatMessage(data: ChatMessageEventArguments) {
-        if (data.msg.forward_from) {
-            return;
-        }
+        // if (data.msg.forward_from) {
+        //     return;
+        // }
         if (this.martonCheck(data.user.id)) {
             data.botReplies = data.botReplies.concat(this.martonResponse);
             return;
