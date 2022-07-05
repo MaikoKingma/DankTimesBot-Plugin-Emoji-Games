@@ -20,8 +20,6 @@ export class Plugin extends AbstractPlugin {
 
     private readonly gameRegistry: GameRegistry = new GameRegistry();
 
-    private readonly martonResponse: string = "Please take some time to read the info (/emojigames) to understand game and its rules. Also don't forget that you can make issues on the github board if you find anything broken."
-
     constructor() {
         super(Plugin.PLUGIN_NAME, "1.1.0");
 
@@ -103,8 +101,6 @@ export class Plugin extends AbstractPlugin {
     }
 
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        if (this.martonCheck(user.id))
-            return this.martonResponse;
         const gameHost = this.GetGameHost(chat.id);
         if (gameHost.IsGameRunning())
             return "You can't start a when one is already in progress, moron...";
@@ -126,16 +122,10 @@ export class Plugin extends AbstractPlugin {
     }
 
     private joinGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        if (this.martonCheck(user.id))
-            return this.martonResponse;
         return this.GetGameHost(chat.id).JoinGame(user, chat);
     }
 
     private cancelGameByUser(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return this.GetGameHost(chat.id).CancelGameByUser(user, chat);
-    }
-
-    private martonCheck(userId: number): boolean {
-        return userId === 100805902;
     }
 }

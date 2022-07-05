@@ -19,8 +19,6 @@ export class GameRegistry {
     }
 
     public HandleMessage(msg: Message, user: User): GameTemplate | undefined {
-        if (this.martonCheck(user.id))
-            return undefined;
         if (msg.text && this.waitingForResponse && this.waitingForResponse == user.id) {
             this.waitingForResponse = undefined;
             return this.selectGameByIndex(msg.text);
@@ -69,9 +67,5 @@ export class GameRegistry {
             return this.availableGames[gameId];
         }
         return undefined;
-    }
-
-    private martonCheck(userId: number): boolean {
-        return userId === 100805902;
     }
 }
