@@ -27,17 +27,18 @@ export class SlotMachineGame {
         if (bet > user.score)
             return GameResponse.SlotMachineResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
         const consecutiveSpin = player.ConsecutiveSpin;
-        let multiplier = 1;
+        let payoutMultiplier = 1;
         if (consecutiveSpin == 1) {
-            multiplier = 2;
+            payoutMultiplier = 2;
         } else if (consecutiveSpin == 2) {
-            multiplier = 4;
+            payoutMultiplier = 4;
         }
-        const outcome = Math.round(this.getOutcome(value, bet, multiplier));
+        const multiplier = SlotMachine.Spin(value);
+        const outcome = this.data.Win(bet, multiplier, payoutMultiplier);
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
-        const stats = `\nSpin: ${consecutiveSpin + 1}, Multiplier ${multiplier}x`
+        const stats = `\nSpin: ${consecutiveSpin + 1}, Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}`
         if (outcome > 0) {
             return GameResponse.SlotMachineResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {
@@ -72,17 +73,6 @@ export class SlotMachineGame {
         return this.data.ToString();
     }
 
-    private getOutcome(value: number, bet: number, payoutMultiplier: number): number {
-        const multiplier = SlotMachine.Spin(value);
-        if (multiplier === -1) {
-            const payout = this.data.WinPot(bet);
-            return payout;
-        } else {
-            const payout = this.data.Win(bet, multiplier, payoutMultiplier);
-            return payout;
-        }
-    }
-
     private findPlayer(user: User): Player {
         let player = this.players.find(player => user.id === player.Id);
         if (!player) {
@@ -104,15 +94,6 @@ export class SlotMachineGame {
             + "- After 10 minutes of inactivity the spin counter is reset\n"
             + "- Consecutive spin multiplier does not apply to winning the pot\n"
             + "- The maximum amount that can be won from the pot is 1000 x bet\n\n"
-            + "<pre>"
-            + "| Outcome  | Payout         |\n"
-            + "|----------|:--------------:|\n"
-            + `| 3 x bar  | Entire pot     |\n`
-            + "| 3 x 7    | Double the bet |\n"
-            + "| 🍋🍋🍋  | Whole bet      |\n"
-            + "| 🍒🍒🍒  | Whole bet      |\n"
-            + "| 🍒🍒        | 1/2 bet        |\n"
-            + "| 🍒               | 1/4 bet        |"
-            + "</pre>";
+            + `${SlotMachine.GetInfo()}`
     }
 }

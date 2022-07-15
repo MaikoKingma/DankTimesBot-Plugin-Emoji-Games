@@ -1,3 +1,5 @@
+import { SpecialEarnings } from "./slot-machine-scores";
+
 export class SlotMachineData {
     private pot: number = 0;
     private timesBet: number = 0;
@@ -5,22 +7,11 @@ export class SlotMachineData {
     private totalWon: number = 0;
     private totalLost: number = 0;
 
-    public WinPot(bet: number): number {
-        let payout = this.pot;
-        const maxPayout = 1000 * bet;
-        if (payout > maxPayout) {
-            payout = maxPayout;
-            this.pot = this.pot - maxPayout;
-        } else {
-            this.pot = 0;
-        }
-        this.updateStats(bet, payout);
-        return payout;
-    }
-
-    public Win(bet: number, scoreMultiplier: number, payoutMultiplier: number): number {
-        this.pot += bet;
-        const payout = ((scoreMultiplier * bet) * payoutMultiplier) - bet;
+    public Win(bet: number, scoreMultiplier: number | SpecialEarnings, payoutMultiplier: number): number {
+        const payout = typeof scoreMultiplier === "string" ?
+            this.WinPot(bet, scoreMultiplier) :
+            ((scoreMultiplier * bet) * payoutMultiplier) - bet;
+        this.pot -= payout;
         this.updateStats(bet, payout);
         return payout;
     }
@@ -32,6 +23,15 @@ export class SlotMachineData {
             + `Total Bet Amount: ${this.totalBetAmount}\n`
             + `Total Won: ${this.totalWon}\n`
             + `Total Lost: ${this.totalLost * -1}`;
+    }
+
+    private WinPot(bet: number, multiplier: SpecialEarnings): number {
+        const alternativePayout = bet * (multiplier === SpecialEarnings.HalfPot ? 10 : 5);
+        if (alternativePayout > this.pot)
+            return alternativePayout;
+        const payout = Math.round(this.pot * (multiplier === SpecialEarnings.HalfPot ? 0.5 : 0.25));
+        const maxPayout = 1000 * bet;
+        return payout > maxPayout ? maxPayout : payout;
     }
 
     private updateStats(bet: number, payout: number) {

@@ -1,27 +1,32 @@
+export enum SpecialEarnings {
+    HalfPot = "Half of the pot OR 10 x bet",
+    QuarterPot = "Quarter of the pot OR 5 x bet"
+}
+
 export class SlotMachineScore {
     constructor(public values: string[]) {}
 }
 
 export class WinningCombination {
-    constructor(private value: string, public payoutMultiplier: number = -1, private amount: number = 3) {}
+    constructor(public value: string, public payoutMultiplier: SpecialEarnings | number, public amount: number = 3) {}
 
     public isMatch(score: SlotMachineScore): boolean {
         return score.values.filter((scoreValue) => scoreValue === this.value).length === this.amount;
     }
 }
 export class SlotMachine {
-    private static readonly BAR: string = "bar";
+    private static readonly BAR: string = "[bar]";
     private static readonly SEVEN: string = "7";
-    private static readonly LEMON: string = "lemon";
-    private static readonly GRAPE: string = "grape";
+    private static readonly LEMON: string = "🍋";
+    private static readonly GRAPE: string = "🍒";
 
     private static readonly WINNING_COMBINATIONS: WinningCombination[] = [
-        new WinningCombination(SlotMachine.BAR),
-        new WinningCombination(SlotMachine.SEVEN, 2),
-        new WinningCombination(SlotMachine.LEMON, 1),
-        new WinningCombination(SlotMachine.GRAPE, 1),
-        new WinningCombination(SlotMachine.GRAPE, 0.5, 2),
-        new WinningCombination(SlotMachine.GRAPE, 0.25, 1)
+        new WinningCombination(SlotMachine.SEVEN, SpecialEarnings.HalfPot),
+        new WinningCombination(SlotMachine.BAR, SpecialEarnings.QuarterPot),
+        new WinningCombination(SlotMachine.LEMON, 3),
+        new WinningCombination(SlotMachine.GRAPE, 2),
+        new WinningCombination(SlotMachine.GRAPE, 1, 2),
+        new WinningCombination(SlotMachine.GRAPE, 0.5, 1)
     ];
 
     private static readonly SCORES: SlotMachineScore[] = [
@@ -91,9 +96,17 @@ export class SlotMachine {
         new SlotMachineScore([SlotMachine.SEVEN, SlotMachine.SEVEN, SlotMachine.SEVEN])
     ];
 
-    public static Spin(diceValue: number): number {
+    public static Spin(diceValue: number): SpecialEarnings | number {
         const score = this.SCORES[diceValue - 1];
         const winnings = this.WINNING_COMBINATIONS.find((combination => combination.isMatch(score)));
         return winnings ? winnings.payoutMultiplier : 0;
+    }
+
+    public static GetInfo(): string {
+        return "<pre>"
+        + "| Outcome  | Payout         |\n"
+        + "|----------|:--------------:|\n"
+        + this.WINNING_COMBINATIONS.map(combination => `| ${combination.amount} x ${combination.value} | ${combination.payoutMultiplier} ${typeof combination.payoutMultiplier === "string" ? "" : " x bet"} |\n`).join("")
+        + "</pre>";
     }
 }
