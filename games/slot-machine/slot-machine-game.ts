@@ -82,7 +82,7 @@ export class SlotMachineGame {
         return player;
     }
 
-    public static GetInfo(): string {
+    public static GetInfo(chat: Chat, user: User, msg: Message, match: string): string {
         return `🎰 <b>Slot Machine</b> 🎰\n\n`
             + "The Slot Machine emoji can be send at any time and the default bet will always be paid if you can afford it.\n\n"
             + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.DEFAULT_BET})\n`

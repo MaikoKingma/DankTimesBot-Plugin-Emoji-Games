@@ -104,8 +104,8 @@ export class SlotMachine {
 
     public static GetInfo(): string {
         return "<pre>"
-        + "| Outcome  | Payout         |\n"
-        + "|----------|:--------------:|\n"
+        + "| Outcome | Payout   |\n"
+        + "|---------|:--------:|\n"
         + this.WINNING_COMBINATIONS.map(combination => `| ${combination.amount} x ${combination.value} | ${combination.payoutMultiplier} ${typeof combination.payoutMultiplier === "string" ? "" : " x bet"} |\n`).join("")
         + "</pre>";
     }

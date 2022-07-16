@@ -42,14 +42,18 @@ export class Plugin extends AbstractPlugin {
         const joinGameCommand = new BotCommand([EmojiGameCommands.JOIN_GAME], "", this.joinGame.bind(this));
         const stopGameCommand = new BotCommand([EmojiGameCommands.CANCEL_GAME], "", this.cancelGameByUser.bind(this));
         const setStakesCommand = new BotCommand([EmojiGameCommands.SET_STAKES], "", this.setStakes.bind(this));
-        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string) => this.GetGameHost(chat.id).GetSlotMachineStats()).bind(this));
+        const slotMachineStatsCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string) => this.GetGameHost(chat.id).GetSlotMachineStats()).bind(this));
         const setBetCommand = new BotCommand([EmojiGameCommands.SET_SLOT_MACHINE_BET], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string): string => {
             this.sendMessage(chat.id, this.GetGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
         }).bind(this));
+        const hoopsInfoCommand = new BotCommand([EmojiGameCommands.HOOPS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
+        const penaltiesInfoCommand = new BotCommand([EmojiGameCommands.PENALTIES_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
+        const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame))
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
-        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineInfoCommand, setBetCommand];
+        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, hoopsInfoCommand, penaltiesInfoCommand, dartsInfoCommand, slotMachineInfoCommand];
     }
     
     private GetGameHost(chatId: number): GameHost {
@@ -65,9 +69,6 @@ export class Plugin extends AbstractPlugin {
         if (data.msg.forward_from) {
             return;
         }
-        // if (data.msg.dice) {
-        //     this.sendDice(data.chat.id, data.msg.dice.emoji);
-        // }
         const gameHost = this.GetGameHost(data.chat.id);
         if (!gameHost.HandleMessage(data)) {
             const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
@@ -81,19 +82,17 @@ export class Plugin extends AbstractPlugin {
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         const message = "<b>A variety of games played with emoji's</b>\n\n"
-            + `/${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
-            + `/${EmojiGameCommands.JOIN_GAME}\n`
-            + `/${EmojiGameCommands.CANCEL_GAME}\n`
-            + `/${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
-            + this.gameRegistry.GetInfo()
-            + "\n\nAll games automatically start once the host takes the first shot.\n\n"
-            + "<b>Stakes</b>\n\n"
-            + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
-            + "Two player game: Winner takes all\n"
-            + "Three player game: 1st gets 2/3 of the pot and 2nd gets 1/3\n"
-            + "Four or more player game: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n\n"
-            + SlotMachineGame.GetInfo()
-            + '\n\n<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
+            + "<b>Round based games</b>\n"
+            + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
+            + `  - /${EmojiGameCommands.HOOPS_INFO}\n`
+            + `  - /${EmojiGameCommands.PENALTIES_INFO}\n`
+            + `  - /${EmojiGameCommands.DARTS_INFO}\n`
+            + `- /${EmojiGameCommands.JOIN_GAME}\n`
+            + `- /${EmojiGameCommands.CANCEL_GAME}\n`
+            + `- /${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
+            + "<b>Always on games</b>\n"
+            + `- /${EmojiGameCommands.SLOT_MACHINE_INFO}\n\n`
+            + '<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
 
         this.sendMessage(chat.id, message, undefined, false, true);
 
