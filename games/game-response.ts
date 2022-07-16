@@ -27,7 +27,7 @@ export class GameResponse {
         return response;
     }
 
-    public static SlotMachineResponse(msg: string): GameResponse {
+    public static AlwaysOnGameResponse(msg: string): GameResponse {
         const response = new GameResponse();
         response.Msg = msg;
         response.Delay = 3;

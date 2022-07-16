@@ -25,7 +25,7 @@ export class SlotMachineGame {
         const player = this.findPlayer(user);
         const bet = player ? player.Bet : SlotMachineGame.DEFAULT_BET;
         if (bet > user.score)
-            return GameResponse.SlotMachineResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
+            return GameResponse.AlwaysOnGameResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
         const consecutiveSpin = player.ConsecutiveSpin;
         let payoutMultiplier = 1;
         if (consecutiveSpin == 1) {
@@ -40,11 +40,11 @@ export class SlotMachineGame {
         }
         const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}\n\n${this.data.ToString()}`
         if (outcome > 0) {
-            return GameResponse.SlotMachineResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
+            return GameResponse.AlwaysOnGameResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {
-            return GameResponse.SlotMachineResponse(`${user.name} lost ${outcome * -1}${stats}`);
+            return GameResponse.AlwaysOnGameResponse(`${user.name} lost ${outcome * -1}${stats}`);
         } else {
-            return GameResponse.SlotMachineResponse(`Welp at least you didn't lose anything.${stats}`);
+            return GameResponse.AlwaysOnGameResponse(`Welp at least you didn't lose anything.${stats}`);
         }
     }
 

@@ -7,6 +7,7 @@ import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/e
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { EmojiGameCommands } from "./emoji-game-commands";
+import { Emoji } from "./games/emoji";
 import { GameHost } from "./games/game-host";
 import { GameRegistry } from "./games/game-registry";
 import { GameTemplate } from "./games/round-based-games/templates/game-template";
@@ -80,16 +81,17 @@ export class Plugin extends AbstractPlugin {
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        const message = "<b>A variety of games played with emoji's</b>\n\n"
+        const message = "<b>A variety of games played with emoji's 🕹️</b>\n\n"
             + "<b>Round based games</b>\n"
             + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
-            + `  - /${EmojiGameCommands.BALL_GAME_INFO}\n`
-            + `  - /${EmojiGameCommands.DARTS_INFO}\n`
-            + `- /${EmojiGameCommands.JOIN_GAME}\n`
-            + `- /${EmojiGameCommands.CANCEL_GAME}\n`
-            + `- /${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
+            + `  - /${EmojiGameCommands.BALL_GAME_INFO} ${Emoji.FootballEmoji}, ${Emoji.BasketballEmoji}\n`
+            + `  - /${EmojiGameCommands.DARTS_INFO} ${Emoji.DartEmoji}\n`
+            + `- /${EmojiGameCommands.JOIN_GAME} 🧑‍🤝‍🧑\n`
+            + `- /${EmojiGameCommands.CANCEL_GAME} 🛑\n`
+            + `- /${EmojiGameCommands.SET_STAKES} [Stakes] 💵\n\n`
             + "<b>Always on games</b>\n"
-            + `- /${EmojiGameCommands.SLOT_MACHINE_INFO}\n\n`
+            + `- /${EmojiGameCommands.SLOT_MACHINE_INFO} ${Emoji.SlotMachineEmoji}\n\n`
+            + `- MagicEightBall: Just post a message with the ${Emoji.MagicEightBallEmoji} emoji in it`
             + '<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
 
         this.sendMessage(chat.id, message, undefined, false, true);
