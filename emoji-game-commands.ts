@@ -4,8 +4,7 @@ export class EmojiGameCommands {
     public static readonly JOIN_GAME = "join";
     public static readonly CANCEL_GAME = "cancel";
     public static readonly SET_STAKES = "setstakes";
-    public static readonly HOOPS_INFO = "hoopsinfo";
-    public static readonly PENALTIES_INFO = "penaltiesinfo";
+    public static readonly BALL_GAME_INFO = "ballgameinfo";
     public static readonly DARTS_INFO = "dartsinfo";
     public static readonly SLOT_MACHINE_STATS = "slotmachine";
     public static readonly SET_SLOT_MACHINE_BET = "slotmachinebet";

@@ -9,7 +9,7 @@ import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { EmojiGameCommands } from "./emoji-game-commands";
 import { GameHost } from "./games/game-host";
 import { GameRegistry } from "./games/game-registry";
-import { GameTemplate } from "./games/round-based-games/games";
+import { GameTemplate } from "./games/round-based-games/templates/game-template";
 import { SlotMachineGame } from "./games/slot-machine/slot-machine-game";
 
 export class Plugin extends AbstractPlugin {
@@ -47,13 +47,12 @@ export class Plugin extends AbstractPlugin {
             this.sendMessage(chat.id, this.GetGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
         }).bind(this));
-        const hoopsInfoCommand = new BotCommand([EmojiGameCommands.HOOPS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
-        const penaltiesInfoCommand = new BotCommand([EmojiGameCommands.PENALTIES_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
+        const ballGameInfoCommand = new BotCommand([EmojiGameCommands.BALL_GAME_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
         const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
         const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame))
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
-        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, hoopsInfoCommand, penaltiesInfoCommand, dartsInfoCommand, slotMachineInfoCommand];
+        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, ballGameInfoCommand, dartsInfoCommand, slotMachineInfoCommand];
     }
     
     private GetGameHost(chatId: number): GameHost {
@@ -84,8 +83,7 @@ export class Plugin extends AbstractPlugin {
         const message = "<b>A variety of games played with emoji's</b>\n\n"
             + "<b>Round based games</b>\n"
             + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
-            + `  - /${EmojiGameCommands.HOOPS_INFO}\n`
-            + `  - /${EmojiGameCommands.PENALTIES_INFO}\n`
+            + `  - /${EmojiGameCommands.BALL_GAME_INFO}\n`
             + `  - /${EmojiGameCommands.DARTS_INFO}\n`
             + `- /${EmojiGameCommands.JOIN_GAME}\n`
             + `- /${EmojiGameCommands.CANCEL_GAME}\n`

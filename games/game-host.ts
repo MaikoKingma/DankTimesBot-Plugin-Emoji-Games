@@ -5,14 +5,15 @@ import { ChatMessageEventArguments } from "../../../src/plugin-host/plugin-event
 import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "../emoji-game-commands";
 import { GameResponse } from "./game-response";
-import { Game, GameState, GameTemplate } from "./round-based-games/games";
+import { RoundBasedGame, GameState } from "./round-based-games/round-based-game";
 import { SlotMachineGame } from "./slot-machine/slot-machine-game";
+import { GameTemplate } from "./round-based-games/templates/game-template";
 
 export class GameHost {
 
     private readonly slotMachine: SlotMachineGame = new SlotMachineGame();
 
-    private currentGame?: Game;
+    private currentGame?: RoundBasedGame;
     private readonly startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
 
     private roundTimeout: NodeJS.Timeout;
