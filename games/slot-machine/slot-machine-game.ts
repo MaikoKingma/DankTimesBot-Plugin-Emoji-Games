@@ -15,7 +15,7 @@ export class SlotMachineGame {
 
     private players: Player[] = [];
 
-    private static readonly DEFAULT_BET = 100;
+    private static readonly DEFAULT_BET = 1;
 
     public get Data(): SlotMachineData {
         return this.data;
@@ -38,7 +38,7 @@ export class SlotMachineGame {
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
-        const stats = `\nSpin: ${consecutiveSpin + 1}, Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}`
+        const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}\n\n${this.data.ToString()}`
         if (outcome > 0) {
             return GameResponse.SlotMachineResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {

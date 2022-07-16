@@ -23,10 +23,10 @@ export class SlotMachine {
     private static readonly WINNING_COMBINATIONS: WinningCombination[] = [
         new WinningCombination(SlotMachine.SEVEN, SpecialEarnings.HalfPot),
         new WinningCombination(SlotMachine.BAR, SpecialEarnings.QuarterPot),
-        new WinningCombination(SlotMachine.LEMON, 3),
-        new WinningCombination(SlotMachine.GRAPE, 2),
-        new WinningCombination(SlotMachine.GRAPE, 1, 2),
-        new WinningCombination(SlotMachine.GRAPE, 0.5, 1)
+        new WinningCombination(SlotMachine.LEMON, 2),
+        new WinningCombination(SlotMachine.GRAPE, 1),
+        new WinningCombination(SlotMachine.GRAPE, 0.5, 2),
+        new WinningCombination(SlotMachine.GRAPE, 0.25, 1)
     ];
 
     private static readonly SCORES: SlotMachineScore[] = [

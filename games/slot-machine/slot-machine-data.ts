@@ -27,9 +27,9 @@ export class SlotMachineData {
 
     private WinPot(bet: number, multiplier: SpecialEarnings): number {
         const alternativePayout = bet * (multiplier === SpecialEarnings.HalfPot ? 10 : 5);
-        if (alternativePayout > this.pot)
-            return alternativePayout;
         const payout = Math.round(this.pot * (multiplier === SpecialEarnings.HalfPot ? 0.5 : 0.25));
+        if (alternativePayout > payout)
+            return alternativePayout;
         const maxPayout = 1000 * bet;
         return payout > maxPayout ? maxPayout : payout;
     }
