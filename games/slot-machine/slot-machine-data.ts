@@ -10,7 +10,7 @@ export class SlotMachineData {
     public Win(bet: number, scoreMultiplier: number | SpecialEarnings, payoutMultiplier: number): number {
         const payout = typeof scoreMultiplier === "string" ?
             this.WinPot(bet, scoreMultiplier) :
-            ((scoreMultiplier * bet) * payoutMultiplier) - bet;
+            Math.round(((scoreMultiplier * bet) * payoutMultiplier) - bet);
         this.pot -= payout;
         this.updateStats(bet, payout);
         return payout;

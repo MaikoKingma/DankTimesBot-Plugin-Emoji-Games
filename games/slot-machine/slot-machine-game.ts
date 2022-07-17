@@ -15,7 +15,7 @@ export class SlotMachineGame {
 
     private players: Player[] = [];
 
-    private static readonly DEFAULT_BET = 1;
+    private static readonly MINIMUM_BET = 4;
 
     public get Data(): SlotMachineData {
         return this.data;
@@ -23,8 +23,7 @@ export class SlotMachineGame {
 
     public PullLever(value: number, chat: Chat, user: User): GameResponse {
         const player = this.findPlayer(user);
-        const bet = player ? player.Bet : SlotMachineGame.DEFAULT_BET;
-        if (bet > user.score)
+        if (player.Bet > user.score)
             return GameResponse.AlwaysOnGameResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
         const consecutiveSpin = player.ConsecutiveSpin;
         let payoutMultiplier = 1;
@@ -34,7 +33,7 @@ export class SlotMachineGame {
             payoutMultiplier = 4;
         }
         const multiplier = SlotMachine.Spin(value);
-        const outcome = this.data.Win(bet, multiplier, payoutMultiplier);
+        const outcome = this.data.Win(player.Bet, multiplier, payoutMultiplier);
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
@@ -57,7 +56,9 @@ export class SlotMachineGame {
             return `💰 Current bet amount ${player.Bet}`;
         if (!bet || bet <= 0 || (bet % 1 !== 0))
             return `${user.name} doesn't know how numbers work`;
-        let currentBet = SlotMachineGame.DEFAULT_BET;
+        if (bet < SlotMachineGame.MINIMUM_BET)
+            return `We don't accept peasant bets like that`
+        let currentBet = SlotMachineGame.MINIMUM_BET;
         currentBet = player.Bet;
         player.Bet = bet;
         if (currentBet < bet) {
@@ -76,7 +77,7 @@ export class SlotMachineGame {
     private findPlayer(user: User): Player {
         let player = this.players.find(player => user.id === player.Id);
         if (!player) {
-            player = new Player(user.id, user.name, SlotMachineGame.DEFAULT_BET);
+            player = new Player(user.id, user.name, SlotMachineGame.MINIMUM_BET);
             this.players.push(player);
         }
         return player;
@@ -85,9 +86,10 @@ export class SlotMachineGame {
     public static GetInfo(chat: Chat, user: User, msg: Message, match: string): string {
         return `🎰 <b>Slot Machine</b> 🎰\n\n`
             + "The Slot Machine emoji can be send at any time and the default bet will always be paid if you can afford it.\n\n"
-            + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.DEFAULT_BET})\n`
+            + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.MINIMUM_BET})\n`
             + `/${EmojiGameCommands.SLOT_MACHINE_STATS} Displays stats of the slot machine\n\n`
             + "Rules:\n"
+            + `- Minimum bet: ${SlotMachineGame.MINIMUM_BET}`
             + "- All bets go into the pot\n"
             + "- Consecutive spins payout more (second spin = 2x payout, third spin = 4x payout)\n"
             + "- After the third consecutive spin the spin counter is reset\n"
