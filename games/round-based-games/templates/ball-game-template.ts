@@ -1,3 +1,5 @@
+import { Chat } from "../../../../../src/chat/chat";
+import { Settings } from "../../../settings";
 import { Emoji } from "../../emoji";
 import { BallGame } from "../ball-game";
 import { GameTemplate } from "./game-template";
@@ -14,6 +16,10 @@ export class BallGameTemplate extends GameTemplate {
 
     public NewGame(): BallGame {
         return new BallGame(this.name, this.emoji, this.maxRounds, this.stakes);
+    }
+
+    public IsEnabled(chat: Chat): boolean {
+        return chat.getSetting(Settings.BALL_GAME_ENABLED);
     }
 
     public override GetInfo(): string {

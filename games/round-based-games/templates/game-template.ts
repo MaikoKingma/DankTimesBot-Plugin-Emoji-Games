@@ -1,3 +1,4 @@
+import { Chat } from "../../../../../src/chat/chat";
 import { GameIdentifier } from "../game-identifier";
 import { RoundBasedGame } from "../round-based-game";
 
@@ -11,6 +12,8 @@ export abstract class GameTemplate extends GameIdentifier {
     public abstract Customize(rounds: number, stakes?: number): GameTemplate;
 
     public abstract NewGame(): RoundBasedGame;
+
+    public abstract IsEnabled(chat: Chat): boolean;
 
     public GetInfo(): string {
         return `<b>${this.FullName.replace(" ", "</b> ")}\n\n`

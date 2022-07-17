@@ -9,6 +9,7 @@ import { RoundBasedGame, GameState } from "./round-based-games/round-based-game"
 import { SlotMachineGame } from "./slot-machine/slot-machine-game";
 import { GameTemplate } from "./round-based-games/templates/game-template";
 import { MagicEightBall } from "./magic-eight-ball/magic-eight-ball";
+import { Settings } from "../settings";
 
 export class GameHost {
 
@@ -24,13 +25,17 @@ export class GameHost {
         private readonly sendMessage: (chatId: number, htmlMessage: string, replyToMessageId?: number, forceReply?: boolean, disableWebPagePreview?: boolean) => Promise<void | Message>
         ) {}
 
-    public HandleMessage(data: ChatMessageEventArguments):boolean {
+    public HandleMessage(data: ChatMessageEventArguments): boolean {
         if (data.msg.text?.includes(Emoji.MagicEightBallEmoji)) {
-            this.handleGameResponse(MagicEightBall.GetAnswer(), data);
+            if (data.chat.getSetting(Settings.MAGIC_EIGHT_BALL_ENABLED)) {
+                this.handleGameResponse(MagicEightBall.GetAnswer(), data);
+            }
             return true;
         }
         if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
-            this.handleGameResponse(this.slotMachine.PullLever(data.msg.dice.value, data.chat, data.user), data);
+            if (data.chat.getSetting(Settings.SLOT_MACHINE_ENABLED)) {
+                this.handleGameResponse(this.slotMachine.PullLever(data.msg.dice.value, data.chat, data.user), data);
+            }
             return true;
         }
         if (this.IsGameRunning()) {

@@ -12,6 +12,7 @@ import { GameHost } from "./games/game-host";
 import { GameRegistry } from "./games/game-registry";
 import { GameTemplate } from "./games/round-based-games/templates/game-template";
 import { SlotMachineGame } from "./games/slot-machine/slot-machine-game";
+import { Settings } from "./settings";
 
 export class Plugin extends AbstractPlugin {
 
@@ -31,7 +32,12 @@ export class Plugin extends AbstractPlugin {
      * @override
      */
     public getPluginSpecificChatSettings(): Array<ChatSettingTemplate<any>> {
-        return [];
+        return [
+            new ChatSettingTemplate("emojigames.games.ballgame", "enable ballgame", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate("emojigames.games.darts", "enable darts", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate("emojigames.games.slotmachine", "enable slotmachine", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate("emojigames.games.magiceightball", "enable magiceightball", true, (original) => this.toBoolean(original), (value) => null),
+        ];
     }
 
     /**
@@ -71,27 +77,30 @@ export class Plugin extends AbstractPlugin {
         }
         const gameHost = this.GetGameHost(data.chat.id);
         if (!gameHost.HandleMessage(data)) {
-            const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
+            const chooseGameResponse = this.gameRegistry.HandleMessage(data.chat, data.msg, data.user);
             if (chooseGameResponse) {
                 if (chooseGameResponse instanceof GameTemplate) {
                     data.botReplies = data.botReplies.concat(gameHost.InitiateGame(chooseGameResponse, data.user, data.chat));
+                } else {
+                    data.botReplies = data.botReplies.concat(chooseGameResponse);
                 }
             }
         }
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
+        const magicEightBall = `MagicEightBall: Just post a message with the ${Emoji.MagicEightBallEmoji} emoji in it`;
         const message = "<b>A variety of games played with emoji's 🕹️</b>\n\n"
             + "<b>Round based games</b>\n"
             + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
-            + `  - /${EmojiGameCommands.BALL_GAME_INFO} ${Emoji.FootballEmoji}, ${Emoji.BasketballEmoji}\n`
-            + `  - /${EmojiGameCommands.DARTS_INFO} ${Emoji.DartEmoji}\n`
+            + `  - ${chat.getSetting(Settings.BALL_GAME_ENABLED) ? `/${EmojiGameCommands.BALL_GAME_INFO}` : `<s>/${EmojiGameCommands.BALL_GAME_INFO}</s>`} ${Emoji.FootballEmoji}, ${Emoji.BasketballEmoji}\n`
+            + `  - ${chat.getSetting(Settings.DARTS_GAME_ENABLED) ? `/${EmojiGameCommands.DARTS_INFO}` : `<s>/${EmojiGameCommands.DARTS_INFO}</s>`} ${Emoji.DartEmoji}\n`
             + `- /${EmojiGameCommands.JOIN_GAME} 🧑‍🤝‍🧑\n`
             + `- /${EmojiGameCommands.CANCEL_GAME} 🛑\n`
             + `- /${EmojiGameCommands.SET_STAKES} [Stakes] 💵\n\n`
             + "<b>Always on games</b>\n"
-            + `- /${EmojiGameCommands.SLOT_MACHINE_INFO} ${Emoji.SlotMachineEmoji}\n\n`
-            + `- MagicEightBall: Just post a message with the ${Emoji.MagicEightBallEmoji} emoji in it`
+            + `- ${chat.getSetting(Settings.SLOT_MACHINE_ENABLED) ? `/${EmojiGameCommands.SLOT_MACHINE_INFO}` : `<s>/${EmojiGameCommands.SLOT_MACHINE_INFO}</s>`} ${Emoji.SlotMachineEmoji}\n`
+            + `- ${chat.getSetting(Settings.SLOT_MACHINE_ENABLED) ? magicEightBall : `<s>/${magicEightBall}</s>`}\n\n`
             + '<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
 
         this.sendMessage(chat.id, message, undefined, false, true);
@@ -102,8 +111,8 @@ export class Plugin extends AbstractPlugin {
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         const gameHost = this.GetGameHost(chat.id);
         if (gameHost.IsGameRunning())
-            return "You can't start a when one is already in progress, moron...";
-        const chooseGameResponse = this.gameRegistry.ChooseGame(msg, user);
+            return "You can't start a game when one is already in progress, moron...";
+        const chooseGameResponse = this.gameRegistry.ChooseGame(chat, msg, user);
         if (chooseGameResponse) {
             if (chooseGameResponse instanceof GameTemplate) {
                 const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
@@ -126,5 +135,15 @@ export class Plugin extends AbstractPlugin {
 
     private cancelGameByUser(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return this.GetGameHost(chat.id).CancelGameByUser(user, chat);
+    }
+
+    private toBoolean(original: string): boolean {
+        original = original.toLowerCase();
+        if (original === "true" || original === "yes" || original === "1") {
+            return true;
+        } else if (original === "false" || original === "no" || original === "0") {
+            return false;
+        }
+        throw new RangeError("The value must be a boolean!");
     }
 }

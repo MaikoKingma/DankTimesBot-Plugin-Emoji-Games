@@ -1,3 +1,5 @@
+import { Chat } from "../../../../../src/chat/chat";
+import { Settings } from "../../../settings";
 import { Emoji } from "../../emoji";
 import { DartsGame } from "../darts-game";
 import { GameTemplate } from "./game-template";
@@ -14,6 +16,10 @@ export class DartsGameTemplate extends GameTemplate {
 
     public NewGame(): DartsGame {
         return new DartsGame(this.name, this.emoji, this.maxRounds, this.stakes);
+    }
+
+    public IsEnabled(chat: Chat): boolean {
+        return chat.getSetting(Settings.DARTS_GAME_ENABLED);
     }
 
     public override GetInfo(): string {

@@ -37,7 +37,7 @@ export class SlotMachineGame {
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
-        const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}\n\n${this.data.ToString()}`
+        const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}}`
         if (outcome > 0) {
             return GameResponse.AlwaysOnGameResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {

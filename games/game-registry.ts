@@ -25,14 +25,20 @@ export class GameRegistry {
             + "4+ players: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n\n";
     }
 
-    public HandleMessage(msg: Message, user: User): GameTemplate | undefined {
+    public HandleMessage(chat: Chat, msg: Message, user: User): GameTemplate | string {
         if (msg.text && this.waitingForResponse && this.waitingForResponse == user.id) {
             this.waitingForResponse = undefined;
-            return this.selectGameByIndex(msg.text);
+            const gameTemplate = this.selectGameByIndex(msg.text);
+            if (gameTemplate) {
+                if (!gameTemplate.IsEnabled(chat))
+                    return "This game is currently disabled"
+                return gameTemplate;
+            }
         }
+        return "";
     }
 
-    public ChooseGame(msg: Message, user: User): GameTemplate | string {
+    public ChooseGame(chat: Chat, msg: Message, user: User): GameTemplate | string {
         if (msg.text) {
             if (msg.text!.startsWith(`/${EmojiGameCommands.CHOOSE_GAME}`)) {
                 const chooseGameParams = msg.text!.replace("/" + EmojiGameCommands.CHOOSE_GAME, "").trim().replace(/\s{2,}/, " ").split(" ");
@@ -41,6 +47,8 @@ export class GameRegistry {
                     if (!gameTemplate)
                         gameTemplate = this.availableGames.find((game) => game.IdentifyGame(chooseGameParams[0]));
                     if (gameTemplate) {
+                        if (!gameTemplate.IsEnabled(chat))
+                            return "This game is currently disabled"
                         let stakes = 0;
                         let rounds = -1;
                         if (chooseGameParams[1]) {
