@@ -16,7 +16,7 @@ export class Player {
     }
 
     public IsTied(player: Player): boolean {
-        return (!this.Disqualified && !player.Disqualified && this.Score === player.Score && this.TieBreakerScore == player.TieBreakerScore);
+        return (!this.Disqualified && !player.Disqualified && this.Score === player.Score && this.TieBreakerScore === player.TieBreakerScore);
     }
     
     public ToString(): string {

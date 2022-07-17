@@ -113,7 +113,10 @@ export abstract class RoundBasedGame extends GameIdentifier {
     public EndRoundEarly(chat: Chat): GameResponse {
         const playersToDisqualify: string[] = [];
         for (const player of this.players) {
-            if (!player.Disqualified && player.RoundsPlayed < (this.round + 1)) {
+            if (!this.shouldBePlaying(player)) {
+                continue;
+            }
+            if (player.RoundsPlayed < (this.round + 1)) {
                 player.Disqualified = true;
                 playersToDisqualify.push(player.name);
             }
@@ -235,11 +238,15 @@ export abstract class RoundBasedGame extends GameIdentifier {
     }
 
     private hasRoundEnded(): boolean {
-        const allPlayersPlayed = this.players.every((player) => player.RoundsPlayed === (this.round + 1) || player.Disqualified);
+        const allPlayersPlayed = this.players.every((player) => this.shouldBePlaying(player) ? player.RoundsPlayed === (this.round + 1) : true);
         if (allPlayersPlayed) {
             this.round++;
             return true;
         }
         return false;
+    }
+
+    private shouldBePlaying(player: Player): boolean {
+        return !player.Disqualified && (this.tiedPlayersCache.length === 0 || this.tiedPlayersCache.includes(player));
     }
 }

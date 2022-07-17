@@ -32,7 +32,8 @@ export class GameHost {
         if (data.msg.dice && data.msg.dice.emoji === Emoji.SlotMachineEmoji) {
             this.handleGameResponse(this.slotMachine.PullLever(data.msg.dice.value, data.chat, data.user), data);
             return true;
-        } else if (this.IsGameRunning()) {
+        }
+        if (this.IsGameRunning()) {
             this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
             return true;
         }
@@ -93,7 +94,7 @@ export class GameHost {
             if (response.Delay > 0)
                 setTimeout(() => this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined), response.Delay * 1000);
             else {
-                this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined)
+                this.sendMessage(data.chat.id, response.Msg, response.IsReply ? data.msg.message_id : undefined);
             }
         }
         if (!this.currentGame)
