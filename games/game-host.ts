@@ -9,11 +9,13 @@ import { RoundBasedGame, GameState } from "./round-based-games/round-based-game"
 import { SlotMachineGame } from "./slot-machine/slot-machine-game";
 import { GameTemplate } from "./round-based-games/templates/game-template";
 import { MagicEightBall } from "./magic-eight-ball/magic-eight-ball";
+import { EasterEggs } from "../easter-eggs";
 import { Settings } from "../settings";
 
 export class GameHost {
 
     private readonly slotMachine: SlotMachineGame = new SlotMachineGame();
+    private readonly easterEggs: EasterEggs;
 
     private currentGame?: RoundBasedGame;
     private readonly startingGameOptions = `\nUse /${EmojiGameCommands.SET_STAKES} to set the stakes or /${EmojiGameCommands.JOIN_GAME} to join the game`;
@@ -23,7 +25,9 @@ export class GameHost {
 
     constructor (private chatId: number,
         private readonly sendMessage: (chatId: number, htmlMessage: string, replyToMessageId?: number, forceReply?: boolean, disableWebPagePreview?: boolean) => Promise<void | Message>
-        ) {}
+        ) {
+            this.easterEggs = new EasterEggs(this.sendMessage.bind(this))
+        }
 
     public HandleMessage(data: ChatMessageEventArguments): boolean {
         if (data.msg.text?.includes(Emoji.MagicEightBallEmoji)) {
@@ -40,6 +44,9 @@ export class GameHost {
         }
         if (this.IsGameRunning()) {
             this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
+            return true;
+        }
+        if (this.easterEggs.HandleEasterEggMessage(data)) {
             return true;
         }
         return false;
