@@ -33,10 +33,11 @@ export class Plugin extends AbstractPlugin {
      */
     public getPluginSpecificChatSettings(): Array<ChatSettingTemplate<any>> {
         return [
-            new ChatSettingTemplate("emojigames.games.ballgame", "enable ballgame", true, (original) => this.toBoolean(original), (value) => null),
-            new ChatSettingTemplate("emojigames.games.darts", "enable darts", true, (original) => this.toBoolean(original), (value) => null),
-            new ChatSettingTemplate("emojigames.games.slotmachine", "enable slotmachine", true, (original) => this.toBoolean(original), (value) => null),
-            new ChatSettingTemplate("emojigames.games.magiceightball", "enable magiceightball", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.BALL_GAME_ENABLED, "enable ballgame", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.DARTS_GAME_ENABLED, "enable darts", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.SLOT_MACHINE_ENABLED, "enable slotmachine", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.MAGIC_EIGHT_BALL_ENABLED, "enable magiceightball", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.EASTEREGGS_ENABLED, "enable eastereggs", true, (original) => this.toBoolean(original), (value) => null),
         ];
     }
 

@@ -46,7 +46,7 @@ export class GameHost {
             this.handleGameResponse(this.currentGame!.HandleMessage(data), data);
             return true;
         }
-        if (this.easterEggs.HandleEasterEggMessage(data)) {
+        if (data.chat.getSetting(Settings.EASTEREGGS_ENABLED), this.easterEggs.HandleEasterEggMessage(data)) {
             return true;
         }
         return false;
