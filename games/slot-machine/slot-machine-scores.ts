@@ -1,6 +1,6 @@
 export enum SpecialEarnings {
-    HalfPot = "Half of the pot OR 10 x bet",
-    QuarterPot = "Quarter of the pot OR 5 x bet"
+    HalfPot = "0.5 x pot OR 10",
+    QuarterPot = "0.25 pot OR 5"
 }
 
 export class SlotMachineScore {
@@ -105,8 +105,8 @@ export class SlotMachine {
     public static GetInfo(): string {
         return "<pre>"
         + "| Outcome | Payout   |\n"
-        + "|---------|:--------:|\n"
-        + this.WINNING_COMBINATIONS.map(combination => `| ${combination.amount} x ${combination.value} | ${combination.payoutMultiplier} ${typeof combination.payoutMultiplier === "string" ? "" : " x bet"} |\n`).join("")
+        + "|---------|----------|\n"
+        + this.WINNING_COMBINATIONS.map(combination => `| ${combination.amount} x ${combination.value}  | ${combination.payoutMultiplier} x bet |\n`).join("")
         + "</pre>";
     }
 }

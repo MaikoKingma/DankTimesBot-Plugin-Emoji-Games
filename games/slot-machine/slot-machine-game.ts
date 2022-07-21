@@ -37,7 +37,7 @@ export class SlotMachineGame {
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
-        const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}}`
+        const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}`
         if (outcome > 0) {
             return GameResponse.AlwaysOnGameResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {
@@ -89,7 +89,7 @@ export class SlotMachineGame {
             + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.MINIMUM_BET})\n`
             + `/${EmojiGameCommands.SLOT_MACHINE_STATS} Displays stats of the slot machine\n\n`
             + "Rules:\n"
-            + `- Minimum bet: ${SlotMachineGame.MINIMUM_BET}`
+            + `- Minimum bet: ${SlotMachineGame.MINIMUM_BET}\n`
             + "- All bets go into the pot\n"
             + "- Consecutive spins payout more (second spin = 2x payout, third spin = 4x payout)\n"
             + "- After the third consecutive spin the spin counter is reset\n"

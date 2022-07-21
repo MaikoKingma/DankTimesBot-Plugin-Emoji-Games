@@ -17,7 +17,7 @@ export class GameRegistry {
     public GetInfo(chat: Chat, user: User, msg: Message, match: string): string {
         const game = msg.text?.startsWith(`/${EmojiGameCommands.BALL_GAME_INFO}`) ? this.availableGames[0] : this.availableGames[1];
         return  game.GetInfo()
-            + "\n\nThe game automatically start once the host takes the first shot.\n\n"
+            + "\n\nThe game automatically starts once the host takes the first shot.\n\n"
             + "<b>Stakes</b>\n\n"
             + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
             + "2 players: Winner takes all\n"
