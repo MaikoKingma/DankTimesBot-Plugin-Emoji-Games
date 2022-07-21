@@ -8,11 +8,13 @@ import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-ty
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { EmojiGameCommands } from "./emoji-game-commands";
 import { FileIOHelper } from "./FileIOHelper";
+import { Emoji } from "./games/emoji";
 import { GameHost } from "./games/game-host";
 import { GameRegistry } from "./games/game-registry";
-import { GameTemplate } from "./games/round-based-games/games";
+import { GameTemplate } from "./games/round-based-games/templates/game-template";
 import { SlotMachineData } from "./games/slot-machine/slot-machine-data";
 import { SlotMachineGame } from "./games/slot-machine/slot-machine-game";
+import { Settings } from "./settings";
 
 export class Plugin extends AbstractPlugin {
 
@@ -36,7 +38,13 @@ export class Plugin extends AbstractPlugin {
      * @override
      */
     public getPluginSpecificChatSettings(): Array<ChatSettingTemplate<any>> {
-        return [];
+        return [
+            new ChatSettingTemplate(Settings.BALL_GAME_ENABLED, "enable ballgame", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.DARTS_GAME_ENABLED, "enable darts", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.SLOT_MACHINE_ENABLED, "enable slotmachine", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.MAGIC_EIGHT_BALL_ENABLED, "enable magiceightball", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.EASTEREGGS_ENABLED, "enable eastereggs", true, (original) => this.toBoolean(original), (value) => null),
+        ];
     }
 
     /**
@@ -48,14 +56,17 @@ export class Plugin extends AbstractPlugin {
         const joinGameCommand = new BotCommand([EmojiGameCommands.JOIN_GAME], "", this.joinGame.bind(this));
         const stopGameCommand = new BotCommand([EmojiGameCommands.CANCEL_GAME], "", this.cancelGameByUser.bind(this));
         const setStakesCommand = new BotCommand([EmojiGameCommands.SET_STAKES], "", this.setStakes.bind(this));
-        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", this.getSlotMachineStats.bind(this));
+        const slotMachineStatsCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_STATS], "", this.GetSlotMachineData.bind(this));
         const setBetCommand = new BotCommand([EmojiGameCommands.SET_SLOT_MACHINE_BET], "", ((chat: Chat, user: User, msg: TelegramBot.Message, match: string): string => {
             this.sendMessage(chat.id, this.getGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
         }).bind(this));
+        const ballGameInfoCommand = new BotCommand([EmojiGameCommands.BALL_GAME_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
+        const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame))
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
-        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineInfoCommand, setBetCommand];
+        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, ballGameInfoCommand, dartsInfoCommand, slotMachineInfoCommand];
     }
 
     private persistData() {
@@ -82,37 +93,33 @@ export class Plugin extends AbstractPlugin {
         if (data.msg.forward_from) {
             return;
         }
-        // if (data.msg.dice) {
-        //     this.sendDice(data.chat.id, data.msg.dice.emoji);
-        // }
         const gameHost = this.getGameHost(data.chat.id);
         if (!gameHost.HandleMessage(data)) {
-            const chooseGameResponse = this.gameRegistry.HandleMessage(data.msg, data.user);
+            const chooseGameResponse = this.gameRegistry.HandleMessage(data.chat, data.msg, data.user);
             if (chooseGameResponse) {
                 if (chooseGameResponse instanceof GameTemplate) {
                     data.botReplies = data.botReplies.concat(gameHost.InitiateGame(chooseGameResponse, data.user, data.chat));
-                }
-                else
+                } else {
                     data.botReplies = data.botReplies.concat(chooseGameResponse);
+                }
             }
         }
     }
     
     private info(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
-        const message = "<b>A variety of games played with emoji's</b>\n\n"
-            + `/${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
-            + `/${EmojiGameCommands.JOIN_GAME}\n`
-            + `/${EmojiGameCommands.CANCEL_GAME}\n`
-            + `/${EmojiGameCommands.SET_STAKES} [Stakes]\n\n`
-            + this.gameRegistry.GetInfo()
-            + "\n\nAll games automatically start once the host takes the first shot.\n\n"
-            + "<b>Stakes</b>\n\n"
-            + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
-            + "Two player game: Winner takes all\n"
-            + "Three player game: 1st gets 2/3 of the pot and 2nd gets 1/3\n"
-            + "Four or more player game: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n\n"
-            + SlotMachineGame.GetInfo()
-            + '\n\n<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
+        const magicEightBall = `MagicEightBall: Just post a message with the ${Emoji.MagicEightBallEmoji} emoji in it`;
+        const message = "<b>A variety of games played with emoji's 🕹️</b>\n\n"
+            + "<b>Round based games</b>\n"
+            + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
+            + `  - ${chat.getSetting(Settings.BALL_GAME_ENABLED) ? `/${EmojiGameCommands.BALL_GAME_INFO}` : `<s>/${EmojiGameCommands.BALL_GAME_INFO}</s>`} ${Emoji.FootballEmoji}, ${Emoji.BasketballEmoji}\n`
+            + `  - ${chat.getSetting(Settings.DARTS_GAME_ENABLED) ? `/${EmojiGameCommands.DARTS_INFO}` : `<s>/${EmojiGameCommands.DARTS_INFO}</s>`} ${Emoji.DartEmoji}\n`
+            + `- /${EmojiGameCommands.JOIN_GAME} 🧑‍🤝‍🧑\n`
+            + `- /${EmojiGameCommands.CANCEL_GAME} 🛑\n`
+            + `- /${EmojiGameCommands.SET_STAKES} [Stakes] 💵\n\n`
+            + "<b>Always on games</b>\n"
+            + `- ${chat.getSetting(Settings.SLOT_MACHINE_ENABLED) ? `/${EmojiGameCommands.SLOT_MACHINE_INFO}` : `<s>/${EmojiGameCommands.SLOT_MACHINE_INFO}</s>`} ${Emoji.SlotMachineEmoji}\n`
+            + `- ${chat.getSetting(Settings.SLOT_MACHINE_ENABLED) ? magicEightBall : `<s>/${magicEightBall}</s>`}\n\n`
+            + '<a href="https://github.com/MaikoKingma/DankTimesBot-Plugin-Emoji-Games">Codebase</a>';
 
         this.sendMessage(chat.id, message, undefined, false, true);
 
@@ -122,8 +129,8 @@ export class Plugin extends AbstractPlugin {
     private chooseGame(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         const gameHost = this.getGameHost(chat.id);
         if (gameHost.IsGameRunning())
-            return "You can't start a when one is already in progress, moron...";
-        const chooseGameResponse = this.gameRegistry.ChooseGame(msg, user);
+            return "You can't start a game when one is already in progress, moron...";
+        const chooseGameResponse = this.gameRegistry.ChooseGame(chat, msg, user);
         if (chooseGameResponse) {
             if (chooseGameResponse instanceof GameTemplate) {
                 const mentions: string[] = msg.entities ? msg.entities.filter((entity) => entity.type === "mention").map((entity) => msg.text!.substring(entity.offset, entity.offset + entity.length)) : [];
@@ -140,7 +147,7 @@ export class Plugin extends AbstractPlugin {
         return this.getGameHost(chat.id).SetStakes(msg, chat, user);
     }
 
-    private getSlotMachineStats(chat: Chat, user: User, msg: TelegramBot.Message, match: string) {
+    private GetSlotMachineData(chat: Chat, user: User, msg: TelegramBot.Message, match: string) {
         return this.getGameHost(chat.id).GetSlotMachineData().Print();
     }
 
@@ -150,5 +157,15 @@ export class Plugin extends AbstractPlugin {
 
     private cancelGameByUser(chat: Chat, user: User, msg: TelegramBot.Message, match: string): string {
         return this.getGameHost(chat.id).CancelGameByUser(user, chat);
+    }
+
+    private toBoolean(original: string): boolean {
+        original = original.toLowerCase();
+        if (original === "true" || original === "yes" || original === "1") {
+            return true;
+        } else if (original === "false" || original === "no" || original === "0") {
+            return false;
+        }
+        throw new RangeError("The value must be a boolean!");
     }
 }

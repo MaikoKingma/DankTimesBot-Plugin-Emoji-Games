@@ -1,30 +1,44 @@
 import { Message } from "node-telegram-bot-api";
 import { User } from "../../../src/chat/user/user";
-import { Emoji } from "./emoji";
 import { EmojiGameCommands } from "../emoji-game-commands";
-import { GameTemplate } from "./round-based-games/games";
+import { Chat } from "../../../src/chat/chat";
+import { GameTemplate } from "./round-based-games/templates/game-template";
+import { DartsGameTemplate } from "./round-based-games/templates/darts-game-template";
+import { BallGameTemplate } from "./round-based-games/templates/ball-game-template";
 
 export class GameRegistry {
     private readonly availableGames: GameTemplate[] = [
-        new GameTemplate("Hoops", Emoji.BasketballEmoji, 9),
-        new GameTemplate("Penalties", Emoji.FootballEmoji, 5),
-        new GameTemplate("Darts", Emoji.DartEmoji, 5)
+        new BallGameTemplate(),
+        new DartsGameTemplate()
     ];
 
     private waitingForResponse?: number;
 
-    public GetInfo(): string {
-        return this.availableGames.map((game) => game.GetInfo()).join("\n\n");
+    public GetInfo(chat: Chat, user: User, msg: Message, match: string): string {
+        const game = msg.text?.startsWith(`/${EmojiGameCommands.BALL_GAME_INFO}`) ? this.availableGames[0] : this.availableGames[1];
+        return  game.GetInfo()
+            + "\n\nThe game automatically starts once the host takes the first shot.\n\n"
+            + "<b>Stakes</b>\n\n"
+            + "Stakes can be set on any game by the host and awarded to the winner(s) at the end of the game.\n"
+            + "2 players: Winner takes all\n"
+            + "3 players: 1st gets 2/3 of the pot and 2nd gets 1/3\n"
+            + "4+ players: 1st get 5/10 of the pot, 2nd gets 3/10 of the pot and 3rd gets 2/10 of the pot\n\n";
     }
 
-    public HandleMessage(msg: Message, user: User): GameTemplate | undefined {
+    public HandleMessage(chat: Chat, msg: Message, user: User): GameTemplate | string {
         if (msg.text && this.waitingForResponse && this.waitingForResponse == user.id) {
             this.waitingForResponse = undefined;
-            return this.selectGameByIndex(msg.text);
+            const gameTemplate = this.selectGameByIndex(msg.text);
+            if (gameTemplate) {
+                if (!gameTemplate.IsEnabled(chat))
+                    return "This game is currently disabled"
+                return gameTemplate;
+            }
         }
+        return "";
     }
 
-    public ChooseGame(msg: Message, user: User): GameTemplate | string {
+    public ChooseGame(chat: Chat, msg: Message, user: User): GameTemplate | string {
         if (msg.text) {
             if (msg.text!.startsWith(`/${EmojiGameCommands.CHOOSE_GAME}`)) {
                 const chooseGameParams = msg.text!.replace("/" + EmojiGameCommands.CHOOSE_GAME, "").trim().replace(/\s{2,}/, " ").split(" ");
@@ -33,6 +47,8 @@ export class GameRegistry {
                     if (!gameTemplate)
                         gameTemplate = this.availableGames.find((game) => game.IdentifyGame(chooseGameParams[0]));
                     if (gameTemplate) {
+                        if (!gameTemplate.IsEnabled(chat))
+                            return "This game is currently disabled"
                         let stakes = 0;
                         let rounds = -1;
                         if (chooseGameParams[1]) {

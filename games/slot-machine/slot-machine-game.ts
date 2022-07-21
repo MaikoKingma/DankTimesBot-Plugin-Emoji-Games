@@ -13,7 +13,7 @@ export class SlotMachineGame {
 
     private players: Player[] = [];
 
-    private static readonly DEFAULT_BET = 100;
+    private static readonly MINIMUM_BET = 4;
 
     public get Data(): SlotMachineData {
         return this.data;
@@ -23,27 +23,27 @@ export class SlotMachineGame {
 
     public PullLever(value: number, chat: Chat, user: User): GameResponse {
         const player = this.findPlayer(user);
-        const bet = player ? player.Bet : SlotMachineGame.DEFAULT_BET;
-        if (bet > user.score)
-            return GameResponse.SlotMachineResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
+        if (player.Bet > user.score)
+            return GameResponse.AlwaysOnGameResponse(`${user.name} can't afford the bet. They only get a participation trophy 🥤`);
         const consecutiveSpin = player.ConsecutiveSpin;
-        let multiplier = 1;
+        let payoutMultiplier = 1;
         if (consecutiveSpin == 1) {
-            multiplier = 2;
+            payoutMultiplier = 2;
         } else if (consecutiveSpin == 2) {
-            multiplier = 4;
+            payoutMultiplier = 4;
         }
-        const outcome = Math.round(this.getOutcome(value, bet, multiplier));
+        const multiplier = SlotMachine.Spin(value);
+        const outcome = this.data.Win(player.Bet, multiplier, payoutMultiplier);
         if (outcome != 0) {
             chat.alterUserScore(new AlterUserScoreArgs(user, outcome, Plugin.PLUGIN_NAME, `Payment + payout slot machine`));
         }
-        const stats = `\nSpin: ${consecutiveSpin + 1}, Multiplier ${multiplier}x`
+        const stats = `\nSpin: ${consecutiveSpin + 1} (${payoutMultiplier}x), Payout: ${multiplier}${typeof multiplier === "string" ? "" : " x bet"}`
         if (outcome > 0) {
-            return GameResponse.SlotMachineResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
+            return GameResponse.AlwaysOnGameResponse(`Congratulations!! ${user.name} won ${outcome}${stats}`);
         } else if (outcome < 0) {
-            return GameResponse.SlotMachineResponse(`${user.name} lost ${outcome * -1}${stats}`);
+            return GameResponse.AlwaysOnGameResponse(`${user.name} lost ${outcome * -1}${stats}`);
         } else {
-            return GameResponse.SlotMachineResponse(`Welp at least you didn't lose anything.${stats}`);
+            return GameResponse.AlwaysOnGameResponse(`Welp at least you didn't lose anything.${stats}`);
         }
     }
 
@@ -56,7 +56,9 @@ export class SlotMachineGame {
             return `💰 Current bet amount ${player.Bet}`;
         if (!bet || bet <= 0 || (bet % 1 !== 0))
             return `${user.name} doesn't know how numbers work`;
-        let currentBet = SlotMachineGame.DEFAULT_BET;
+        if (bet < SlotMachineGame.MINIMUM_BET)
+            return `We don't accept peasant bets like that`
+        let currentBet = SlotMachineGame.MINIMUM_BET;
         currentBet = player.Bet;
         player.Bet = bet;
         if (currentBet < bet) {
@@ -68,47 +70,28 @@ export class SlotMachineGame {
         }
     }
 
-    private getOutcome(value: number, bet: number, payoutMultiplier: number): number {
-        const multiplier = SlotMachine.Spin(value);
-        if (multiplier === -1) {
-            const payout = this.data.WinPot(bet);
-            return payout;
-        } else {
-            const payout = this.data.Win(bet, multiplier, payoutMultiplier);
-            return payout;
-        }
-    }
-
     private findPlayer(user: User): Player {
         let player = this.players.find(player => user.id === player.Id);
         if (!player) {
-            player = new Player(user.id, user.name, SlotMachineGame.DEFAULT_BET);
+            player = new Player(user.id, user.name, SlotMachineGame.MINIMUM_BET);
             this.players.push(player);
         }
         return player;
     }
 
-    public static GetInfo(): string {
+    public static GetInfo(chat: Chat, user: User, msg: Message, match: string): string {
         return `🎰 <b>Slot Machine</b> 🎰\n\n`
             + "The Slot Machine emoji can be send at any time and the default bet will always be paid if you can afford it.\n\n"
-            + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.DEFAULT_BET})\n`
+            + `/${EmojiGameCommands.SET_SLOT_MACHINE_BET} [Bet] Change your betting amount (Default: ${SlotMachineGame.MINIMUM_BET})\n`
             + `/${EmojiGameCommands.SLOT_MACHINE_STATS} Displays stats of the slot machine\n\n`
             + "Rules:\n"
+            + `- Minimum bet: ${SlotMachineGame.MINIMUM_BET}\n`
             + "- All bets go into the pot\n"
             + "- Consecutive spins payout more (second spin = 2x payout, third spin = 4x payout)\n"
             + "- After the third consecutive spin the spin counter is reset\n"
             + "- After 10 minutes of inactivity the spin counter is reset\n"
             + "- Consecutive spin multiplier does not apply to winning the pot\n"
             + "- The maximum amount that can be won from the pot is 1000 x bet\n\n"
-            + "<pre>"
-            + "| Outcome  | Payout         |\n"
-            + "|----------|:--------------:|\n"
-            + `| 3 x bar  | Entire pot     |\n`
-            + "| 3 x 7    | Double the bet |\n"
-            + "| 🍋🍋🍋  | Whole bet      |\n"
-            + "| 🍒🍒🍒  | Whole bet      |\n"
-            + "| 🍒🍒        | 1/2 bet        |\n"
-            + "| 🍒               | 1/4 bet        |"
-            + "</pre>";
+            + `${SlotMachine.GetInfo()}`
     }
 }

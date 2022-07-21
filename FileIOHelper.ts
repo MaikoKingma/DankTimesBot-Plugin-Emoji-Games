@@ -25,7 +25,7 @@ export class FileIOHelper {
 
     public GetSlotMachineData(chatId: number): SlotMachineData {
         const data = new SlotMachineData();
-        let json = this.loadDataFromFile<SlotMachineData>(this.getSlotMachineDataFileName(chatId));
+        const json = this.loadDataFromFile<SlotMachineData>(this.getSlotMachineDataFileName(chatId));
         if (json)
             Object.assign(data, json);
         return data;

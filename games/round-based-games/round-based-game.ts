@@ -2,43 +2,12 @@ import { AlterUserScoreArgs } from "../../../../src/chat/alter-user-score-args";
 import { Chat } from "../../../../src/chat/chat";
 import { User } from "../../../../src/chat/user/user";
 import { ChatMessageEventArguments } from "../../../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
-import { Emoji } from "../emoji";
 import { EmojiGameCommands } from "../../emoji-game-commands";
 import { GameResponse } from "../game-response";
 import { Player } from "./player";
 import { Plugin } from "../../plugin";
-import { Message } from "node-telegram-bot-api";
-
-export class GameIdentifier {
-
-    constructor(protected name: string, protected emoji: string, protected maxRounds: number, protected stakes: number = 0) {}
-
-    public get FullName(): string {
-        return `${this.name} ${this.emoji}`;
-    }
-}
-
-export class GameTemplate extends GameIdentifier {
-
-    public IdentifyGame(msg: string): boolean {
-        msg = msg.toLocaleLowerCase();
-        return (msg === this.name.toLocaleLowerCase() || msg === this.emoji.toLocaleLowerCase() || msg === this.FullName.toLocaleLowerCase());
-    }
-
-    public Customize(rounds: number, stakes: number = 0): GameTemplate {
-        return new GameTemplate(this.name, this.emoji, rounds, stakes);
-    }
-
-    public NewGame(): Game {
-        return new Game(this.name, this.emoji, this.maxRounds, this.stakes);
-    }
-
-    public GetInfo(): string {
-        return `<b>${this.FullName.replace(" ", "</b> ")}\n\n`
-            + `Shoot by posting the ${this.emoji} emoji. After ${this.maxRounds} rounds the player with the highest score wins.`
-            + (this.emoji === Emoji.DartEmoji ? `\nBullseye: 25 points\n1st circle: 15 points\n2nd circle: 10 points\n3rd circle: 5 points\n4th circle: 3 points` : "");
-    }
-}
+import { Dice, Message } from "node-telegram-bot-api";
+import { GameIdentifier } from "./game-identifier";
 
 export enum GameState {
     Initiated,
@@ -46,7 +15,7 @@ export enum GameState {
     Ended
 }
 
-export class Game extends GameIdentifier {
+export abstract class RoundBasedGame extends GameIdentifier {
     private hostId: number = -1;
     private gameState: GameState = GameState.Initiated;
     private round: number = 0;
@@ -65,9 +34,11 @@ export class Game extends GameIdentifier {
         return this.hostId;
     }
 
-    constructor(name: string, emoji: string, maxRounds: number, stakes: number) {
+    constructor(name: string, emoji: string[], maxRounds: number, stakes: number) {
         super(name, emoji, maxRounds, stakes);
     }
+
+    public abstract GetOutcome(dice: Dice): number;
 
     public AddPlayer(user: User, chat: Chat): string {
         if (this.hostId === -1) {
@@ -90,7 +61,7 @@ export class Game extends GameIdentifier {
     public HandleMessage(data: ChatMessageEventArguments): GameResponse {
         var player = this.findPlayerById(data.user.id);
         if (player && !player.Disqualified) {
-            if (data.msg.dice && data.msg.dice.emoji === this.emoji) {
+            if (data.msg.dice && this.MatchEmoji(data.msg.dice.emoji)) {
                 let tieBreaking = false;
                 if (this.tiedPlayersCache.length !== 0) {
                     if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1) 
@@ -106,12 +77,13 @@ export class Game extends GameIdentifier {
                 }
                 if (player.RoundsPlayed > this.round)
                     return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
-                player.Shoot(data.msg.dice, tieBreaking);
+                
+                player.ScorePoints(this.GetOutcome(data.msg.dice), tieBreaking);
                 if (this.hasRoundEnded()) {
                     return this.endRound(data.chat);
                 }
                 return GameResponse.EmptyResponse(true);
-            } else if (data.msg.text === this.emoji) {
+            } else if (data.msg.text && this.MatchEmoji(data.msg.text)) {
                 return GameResponse.PlayerError(`You seem to be using a client that does not support animated emoji. Use a compatible client instead or the host can /${EmojiGameCommands.CANCEL_GAME} the game.`);
             }
         }
@@ -141,7 +113,10 @@ export class Game extends GameIdentifier {
     public EndRoundEarly(chat: Chat): GameResponse {
         const playersToDisqualify: string[] = [];
         for (const player of this.players) {
-            if (!player.Disqualified && player.RoundsPlayed < (this.round + 1)) {
+            if (!this.shouldBePlaying(player)) {
+                continue;
+            }
+            if (player.RoundsPlayed < (this.round + 1)) {
                 player.Disqualified = true;
                 playersToDisqualify.push(player.name);
             }
@@ -263,11 +238,15 @@ export class Game extends GameIdentifier {
     }
 
     private hasRoundEnded(): boolean {
-        const allPlayersPlayed = this.players.every((player) => player.RoundsPlayed === (this.round + 1) || player.Disqualified);
+        const allPlayersPlayed = this.players.every((player) => this.shouldBePlaying(player) ? player.RoundsPlayed === (this.round + 1) : true);
         if (allPlayersPlayed) {
             this.round++;
             return true;
         }
         return false;
+    }
+
+    private shouldBePlaying(player: Player): boolean {
+        return !player.Disqualified && (this.tiedPlayersCache.length === 0 || this.tiedPlayersCache.includes(player));
     }
 }
