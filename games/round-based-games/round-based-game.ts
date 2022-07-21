@@ -16,9 +16,10 @@ export enum GameState {
 }
 
 export abstract class RoundBasedGame extends GameIdentifier {
+    protected round: number = 0;
+    
     private hostId: number = -1;
     private gameState: GameState = GameState.Initiated;
-    private round: number = 0;
     private players: Player[] = [];
     private tiedPlayersCache: Player[] = [];
 
