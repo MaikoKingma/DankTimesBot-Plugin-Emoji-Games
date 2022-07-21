@@ -4,15 +4,21 @@ export class Player {
     public Score: number = 0;
     public TieBreakerScore: number = 0;
     public RoundsPlayed: number = 0;
+    public ThrowsThisRound: number = 0;
 
     constructor(public id: number, public name: string) { }
 
     public ScorePoints(points: number, tieBreaker: boolean) {
-        this.RoundsPlayed++;
+        this.ThrowsThisRound++;
         if (tieBreaker)
             this.TieBreakerScore += points;
         else
             this.Score += points;
+    }
+
+    public RoundTransition() {
+        this.RoundsPlayed++;
+        this.ThrowsThisRound = 0;
     }
 
     public IsTied(player: Player): boolean {

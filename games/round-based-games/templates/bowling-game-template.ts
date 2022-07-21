@@ -10,16 +10,16 @@ export class BowlingGameTemplate extends GameTemplate {
         return chat.getSetting(Settings.BOWLING_ENABLED);
     }
 
-    public constructor(rounds: number = 3, stakes: number = 0) {
-        super("Bowling", [ Emoji.BowlingEmoji ], rounds, stakes);
+    public constructor(rounds: number = 3, throwsPerRound: number = 2, stakes: number = 0) {
+        super("Bowling", [ Emoji.BowlingEmoji ], rounds, throwsPerRound, stakes);
     }
 
     public Customize(rounds: number, stakes: number = 0): BowlingGameTemplate {
-        return new BowlingGameTemplate(rounds, stakes);
+        return new BowlingGameTemplate(rounds, this.throwsPerRound, stakes);
     }
 
     public NewGame(): BowlingGame {
-        return new BowlingGame(this.name, this.emoji, this.maxRounds, this.stakes);
+        return new BowlingGame(this.name, this.emoji, this.maxRounds, this.throwsPerRound, this.stakes);
     }
 
     public override GetInfo(): string {

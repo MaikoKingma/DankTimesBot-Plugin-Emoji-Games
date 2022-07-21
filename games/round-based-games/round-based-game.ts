@@ -34,8 +34,8 @@ export abstract class RoundBasedGame extends GameIdentifier {
         return this.hostId;
     }
 
-    constructor(name: string, emoji: string[], maxRounds: number, stakes: number) {
-        super(name, emoji, maxRounds, stakes);
+    constructor(name: string, emoji: string[], maxRounds: number, throwsPerRound: number, stakes: number) {
+        super(name, emoji, maxRounds, throwsPerRound, stakes);
     }
 
     public abstract GetOutcome(dice: Dice): number;
@@ -79,6 +79,8 @@ export abstract class RoundBasedGame extends GameIdentifier {
                     return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
                 
                 player.ScorePoints(this.GetOutcome(data.msg.dice), tieBreaking);
+                if (player.ThrowsThisRound === this.throwsPerRound)
+                    player.RoundTransition();
                 if (this.hasRoundEnded()) {
                     return this.endRound(data.chat);
                 }
