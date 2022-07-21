@@ -38,6 +38,7 @@ export class Plugin extends AbstractPlugin {
             new ChatSettingTemplate(Settings.SLOT_MACHINE_ENABLED, "enable slotmachine", true, (original) => this.toBoolean(original), (value) => null),
             new ChatSettingTemplate(Settings.MAGIC_EIGHT_BALL_ENABLED, "enable magiceightball", true, (original) => this.toBoolean(original), (value) => null),
             new ChatSettingTemplate(Settings.EASTEREGGS_ENABLED, "enable eastereggs", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.BOWLING_ENABLED, "enable bowling", true, (original) => this.toBoolean(original), (value) => null)
         ];
     }
 
@@ -55,12 +56,13 @@ export class Plugin extends AbstractPlugin {
             this.sendMessage(chat.id, this.GetGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
         }).bind(this));
-        const ballGameInfoCommand = new BotCommand([EmojiGameCommands.BALL_GAME_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
-        const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
-        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame))
+        const ballGameInfoCommand = new BotCommand([EmojiGameCommands.BALL_GAME_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry));
+        const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry));
+        const bowlingInfoCommand = new BotCommand([EmojiGameCommands.BOWLING_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry));
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
-        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, ballGameInfoCommand, dartsInfoCommand, slotMachineInfoCommand];
+        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, ballGameInfoCommand, dartsInfoCommand, bowlingInfoCommand, slotMachineInfoCommand];
     }
     
     private GetGameHost(chatId: number): GameHost {
@@ -73,6 +75,9 @@ export class Plugin extends AbstractPlugin {
     }
 
     private OnChatMessage(data: ChatMessageEventArguments) {
+        if (data.msg.dice) {
+            console.log(JSON.stringify(data.msg.dice));
+        }
         if (data.msg.forward_from) {
             return;
         }
