@@ -6,6 +6,7 @@ export class Player {
     public TieBreakerScore: number = 0;
     public RoundsPlayed: number = 0;
     public ThrowsThisRound: number = 0;
+    private status: string[] = [];
 
     constructor(public id: number, public name: string) { }
 
@@ -23,6 +24,10 @@ export class Player {
         this.ThrowsThisRound = 0;
     }
 
+    public AddStatus(status: string) {
+        this.status.push(status)
+    }
+
     public IsTied(player: Player): boolean {
         return (!this.Disqualified && !player.Disqualified && this.Score === player.Score && this.TieBreakerScore === player.TieBreakerScore);
     }
@@ -32,8 +37,11 @@ export class Player {
         if (this.TieBreakerScore !== 0)
             str = `${str} - ${this.TieBreakerScore}`
         str = `${str} (+${this.ScorePerRound[this.ScorePerRound.length - 1]})`
+        if (this.status.length > 0)
+            str += ` - ${this.status.join(", ")}`; 
+        this.status = [];
         if (this.Disqualified)
-            str = `<s>${str}</s>`;
+            return `<s>${str}</s>`;
         return str;
     }
 }

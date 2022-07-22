@@ -6,6 +6,9 @@ import { RoundBasedGame } from "./round-based-game";
 
 export class BowlingGame extends RoundBasedGame {
 
+    private readonly StrikePoints: number = 12;
+    private readonly SparePoints: number = 8;
+
     public constructor(name: string, emoji: string[], maxRounds: number, throwsPerRound: number, stakes: number) {
         super(name, emoji, maxRounds, throwsPerRound, stakes);
     }
@@ -23,9 +26,14 @@ export class BowlingGame extends RoundBasedGame {
                 outcome = dice.value;
                 break;
         }
-        
-        const lastRoundsPoints = player!.ScorePerRound[player!.RoundsPlayed - 1];
-        if ((this.throwsPerRound === 3 && player.ThrowsThisRound == 2) || lastRoundsPoints === 12 || (player!.ThrowsThisRound == 1 && lastRoundsPoints >= 8)) {
+        const pointsThisRound = outcome + player.ScorePerRound[player.RoundsPlayed];
+        if (pointsThisRound >= this.StrikePoints)
+            player.AddStatus("Strike 💥");
+        else if (pointsThisRound >= this.SparePoints)
+            player.AddStatus("Spare ✨");
+
+        const pointsLastRound = player!.ScorePerRound[player.RoundsPlayed - 1];
+        if ((this.throwsPerRound === 3 && player.ThrowsThisRound == 2) || pointsLastRound === this.StrikePoints || (player!.ThrowsThisRound == 1 && pointsLastRound >= this.SparePoints)) {
             outcome = outcome * 2;
         }
         return outcome;
