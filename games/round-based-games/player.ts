@@ -2,6 +2,7 @@ export class Player {
 
     public Disqualified: boolean = false;
     public Score: number = 0;
+    public ScorePerRound: number[] = [];
     public TieBreakerScore: number = 0;
     public RoundsPlayed: number = 0;
     public ThrowsThisRound: number = 0;
@@ -10,6 +11,7 @@ export class Player {
 
     public ScorePoints(points: number, tieBreaker: boolean) {
         this.ThrowsThisRound++;
+        this.ScorePerRound[this.RoundsPlayed] = this.ScorePerRound[this.RoundsPlayed] ?this.ScorePerRound[this.RoundsPlayed] + points : 0 + points;
         if (tieBreaker)
             this.TieBreakerScore += points;
         else

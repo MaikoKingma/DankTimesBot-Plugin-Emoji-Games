@@ -1,4 +1,5 @@
 import { Dice } from "node-telegram-bot-api";
+import { Player } from "./player";
 import { RoundBasedGame } from "./round-based-game";
 
 export class DartsGame extends RoundBasedGame {
@@ -6,7 +7,7 @@ export class DartsGame extends RoundBasedGame {
         super(name, emoji, maxRounds, throwsPerRound, stakes);
     }
 
-    public override GetOutcome(dice: Dice): number {
+    public override GetOutcome(dice: Dice, player: Player): number {
         switch (dice.value) {
             case 2:
                 return 3;

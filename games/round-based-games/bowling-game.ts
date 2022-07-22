@@ -1,22 +1,34 @@
 import { Dice } from "node-telegram-bot-api";
 import { ChatMessageEventArguments } from "../../../../src/plugin-host/plugin-events/event-arguments/chat-message-event-arguments";
 import { GameResponse } from "../game-response";
+import { Player } from "./player";
 import { RoundBasedGame } from "./round-based-game";
 
 export class BowlingGame extends RoundBasedGame {
+
     public constructor(name: string, emoji: string[], maxRounds: number, throwsPerRound: number, stakes: number) {
         super(name, emoji, maxRounds, throwsPerRound, stakes);
     }
 
-    public override GetOutcome(dice: Dice): number {
+    public override GetOutcome(dice: Dice, player: Player): number {
+        let outcome;
         switch (dice.value) {
             case 1:
-                return 0;
+                outcome = 0;
+                break;
             case 2: 
-                return 1;
+                outcome = 1;
+                break;
             default:
-                return dice.value;
+                outcome = dice.value;
+                break;
         }
+        
+        const lastRoundsPoints = player!.ScorePerRound[player!.RoundsPlayed - 1];
+        if (this.throwsPerRound === 3 || lastRoundsPoints === 12 || (player!.ThrowsThisRound == 1 && lastRoundsPoints >= 8)) {
+            outcome = outcome * 2;
+        }
+        return outcome;
     }
 
     public override HandleMessage(data: ChatMessageEventArguments): GameResponse {

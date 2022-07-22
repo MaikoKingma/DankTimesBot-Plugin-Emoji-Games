@@ -75,9 +75,6 @@ export class Plugin extends AbstractPlugin {
     }
 
     private OnChatMessage(data: ChatMessageEventArguments) {
-        if (data.msg.dice) {
-            console.log(JSON.stringify(data.msg.dice));
-        }
         if (data.msg.forward_from) {
             return;
         }
