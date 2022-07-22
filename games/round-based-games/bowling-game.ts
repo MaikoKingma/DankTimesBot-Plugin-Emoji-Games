@@ -25,7 +25,7 @@ export class BowlingGame extends RoundBasedGame {
         }
         
         const lastRoundsPoints = player!.ScorePerRound[player!.RoundsPlayed - 1];
-        if (this.throwsPerRound === 3 || lastRoundsPoints === 12 || (player!.ThrowsThisRound == 1 && lastRoundsPoints >= 8)) {
+        if ((this.throwsPerRound === 3 && player.ThrowsThisRound == 2) || lastRoundsPoints === 12 || (player!.ThrowsThisRound == 1 && lastRoundsPoints >= 8)) {
             outcome = outcome * 2;
         }
         return outcome;

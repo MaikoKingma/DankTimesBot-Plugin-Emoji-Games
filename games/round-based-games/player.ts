@@ -30,7 +30,8 @@ export class Player {
     public ToString(): string {
         let str = `${this.name} ${this.Score}`;
         if (this.TieBreakerScore !== 0)
-            str = `${str} (+${this.TieBreakerScore})`
+            str = `${str} - ${this.TieBreakerScore}`
+        str = `${str} (+${this.ScorePerRound[this.ScorePerRound.length - 1]})`
         if (this.Disqualified)
             str = `<s>${str}</s>`;
         return str;

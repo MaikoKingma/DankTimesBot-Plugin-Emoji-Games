@@ -98,6 +98,7 @@ export class Plugin extends AbstractPlugin {
             + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
             + `  - ${chat.getSetting(Settings.BALL_GAME_ENABLED) ? `/${EmojiGameCommands.BALL_GAME_INFO}` : `<s>/${EmojiGameCommands.BALL_GAME_INFO}</s>`} ${Emoji.FootballEmoji}, ${Emoji.BasketballEmoji}\n`
             + `  - ${chat.getSetting(Settings.DARTS_GAME_ENABLED) ? `/${EmojiGameCommands.DARTS_INFO}` : `<s>/${EmojiGameCommands.DARTS_INFO}</s>`} ${Emoji.DartEmoji}\n`
+            + `  - ${chat.getSetting(Settings.BOWLING_ENABLED) ? `/${EmojiGameCommands.BOWLING_INFO}` : `<s>/${EmojiGameCommands.BOWLING_INFO}</s>`} ${Emoji.BowlingEmoji}\n`
             + `- /${EmojiGameCommands.JOIN_GAME} 🧑‍🤝‍🧑\n`
             + `- /${EmojiGameCommands.CANCEL_GAME} 🛑\n`
             + `- /${EmojiGameCommands.SET_STAKES} [Stakes] 💵\n\n`

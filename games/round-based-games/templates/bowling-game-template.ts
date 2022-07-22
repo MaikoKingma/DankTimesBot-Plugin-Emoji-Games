@@ -23,6 +23,11 @@ export class BowlingGameTemplate extends GameTemplate {
     }
 
     public override GetInfo(): string {
-        return super.GetInfo() + `\n Scoring: WIP`;
+        return super.GetInfo() + "\nRules:\n"
+            + "- Each player throws twice per round\n"
+            + "- The last round each player throws three times\n"
+            + "- You get points for each pin that falls\n"
+            + "- If you roll 12 points in a round you get a strike, the next two throws are doubled\n"
+            + "- If you roll 8 or more points in a round you get a spare, the next throw is doubled";
     }
 }
