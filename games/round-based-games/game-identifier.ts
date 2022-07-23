@@ -1,6 +1,6 @@
 export abstract class GameIdentifier {
 
-    constructor(protected name: string, protected emoji: string[], protected maxRounds: number, protected stakes: number = 0) {}
+    constructor(protected name: string, protected emoji: string[], protected maxRounds: number, protected throwsPerRound = 1, protected stakes: number = 0) {}
 
     public get FullName(): string {
         return `${this.name} ${this.emoji}`;

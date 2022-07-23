@@ -6,16 +6,16 @@ import { GameTemplate } from "./game-template";
 
 export class BallGameTemplate extends GameTemplate {
 
-    public constructor(rounds: number = 5, stakes: number = 0) {
-        super("BallGame", [ Emoji.FootballEmoji, Emoji.BasketballEmoji ], rounds, stakes);
+    public constructor(rounds: number = 5, throwsPerRound: number = 1, stakes: number = 0) {
+        super("BallGame", [ Emoji.FootballEmoji, Emoji.BasketballEmoji ], rounds, throwsPerRound, stakes);
     }
 
     public Customize(rounds: number, stakes: number = 0): BallGameTemplate {
-        return new BallGameTemplate(rounds, stakes);
+        return new BallGameTemplate(rounds, this.throwsPerRound, stakes);
     }
 
     public NewGame(): BallGame {
-        return new BallGame(this.name, this.emoji, this.maxRounds, this.stakes);
+        return new BallGame(this.name, this.emoji, this.maxRounds, this.throwsPerRound, this.stakes);
     }
 
     public IsEnabled(chat: Chat): boolean {

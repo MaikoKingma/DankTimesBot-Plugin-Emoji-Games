@@ -5,17 +5,19 @@ import { Chat } from "../../../src/chat/chat";
 import { GameTemplate } from "./round-based-games/templates/game-template";
 import { DartsGameTemplate } from "./round-based-games/templates/darts-game-template";
 import { BallGameTemplate } from "./round-based-games/templates/ball-game-template";
+import { BowlingGameTemplate } from "./round-based-games/templates/bowling-game-template";
 
 export class GameRegistry {
     private readonly availableGames: GameTemplate[] = [
         new BallGameTemplate(),
-        new DartsGameTemplate()
+        new DartsGameTemplate(),
+        new BowlingGameTemplate()
     ];
 
     private waitingForResponse?: number;
 
     public GetInfo(chat: Chat, user: User, msg: Message, match: string): string {
-        const game = msg.text?.startsWith(`/${EmojiGameCommands.BALL_GAME_INFO}`) ? this.availableGames[0] : this.availableGames[1];
+        const game = msg.text?.startsWith(`/${EmojiGameCommands.BALL_GAME_INFO}`) ? this.availableGames[0] : msg.text?.startsWith(`/${EmojiGameCommands.DARTS_INFO}`) ? this.availableGames[1] : this.availableGames[2];
         return  game.GetInfo()
             + "\n\nThe game automatically starts once the host takes the first shot.\n\n"
             + "<b>Stakes</b>\n\n"

@@ -6,16 +6,16 @@ import { GameTemplate } from "./game-template";
 
 export class DartsGameTemplate extends GameTemplate {
 
-    public constructor(rounds: number = 5, stakes: number = 0) {
-        super("Darts", [ Emoji.DartEmoji ], rounds, stakes);
+    public constructor(rounds: number = 5, throwsPerRound: number = 1, stakes: number = 0) {
+        super("Darts", [ Emoji.DartEmoji ], rounds, throwsPerRound, stakes);
     }
 
     public Customize(rounds: number, stakes: number = 0): DartsGameTemplate {
-        return new DartsGameTemplate(rounds, stakes);
+        return new DartsGameTemplate(rounds, this.throwsPerRound, stakes);
     }
 
     public NewGame(): DartsGame {
-        return new DartsGame(this.name, this.emoji, this.maxRounds, this.stakes);
+        return new DartsGame(this.name, this.emoji, this.maxRounds, this.throwsPerRound, this.stakes);
     }
 
     public IsEnabled(chat: Chat): boolean {

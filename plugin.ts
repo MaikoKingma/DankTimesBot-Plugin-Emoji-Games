@@ -44,6 +44,7 @@ export class Plugin extends AbstractPlugin {
             new ChatSettingTemplate(Settings.SLOT_MACHINE_ENABLED, "enable slotmachine", true, (original) => this.toBoolean(original), (value) => null),
             new ChatSettingTemplate(Settings.MAGIC_EIGHT_BALL_ENABLED, "enable magiceightball", true, (original) => this.toBoolean(original), (value) => null),
             new ChatSettingTemplate(Settings.EASTEREGGS_ENABLED, "enable eastereggs", true, (original) => this.toBoolean(original), (value) => null),
+            new ChatSettingTemplate(Settings.BOWLING_ENABLED, "enable bowling", true, (original) => this.toBoolean(original), (value) => null)
         ];
     }
 
@@ -61,12 +62,13 @@ export class Plugin extends AbstractPlugin {
             this.sendMessage(chat.id, this.getGameHost(chat.id).SetBet(user, msg), msg.message_id, false);
             return "";
         }).bind(this));
-        const ballGameInfoCommand = new BotCommand([EmojiGameCommands.BALL_GAME_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
-        const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry))
-        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame))
+        const ballGameInfoCommand = new BotCommand([EmojiGameCommands.BALL_GAME_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry));
+        const dartsInfoCommand = new BotCommand([EmojiGameCommands.DARTS_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry));
+        const bowlingInfoCommand = new BotCommand([EmojiGameCommands.BOWLING_INFO], "", this.gameRegistry.GetInfo.bind(this.gameRegistry));
+        const slotMachineInfoCommand = new BotCommand([EmojiGameCommands.SLOT_MACHINE_INFO], "", SlotMachineGame.GetInfo.bind(SlotMachineGame));
         // const betCommand = new BotCommand(["Bet"], "", this.chooseGame.bind(this)); // TODO
         // const rematchCommand = new BotCommand(["rematch"], "", this.chooseGame.bind(this)); // TODO
-        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, ballGameInfoCommand, dartsInfoCommand, slotMachineInfoCommand];
+        return [helpCommand, chooseGameCommand, joinGameCommand, stopGameCommand, setStakesCommand, slotMachineStatsCommand, setBetCommand, ballGameInfoCommand, dartsInfoCommand, bowlingInfoCommand, slotMachineInfoCommand];
     }
 
     private persistData() {
@@ -113,6 +115,7 @@ export class Plugin extends AbstractPlugin {
             + `- /${EmojiGameCommands.CHOOSE_GAME} (optional)[GameName|GameEmoji|GameIndex] [Rounds] [Stakes]\n`
             + `  - ${chat.getSetting(Settings.BALL_GAME_ENABLED) ? `/${EmojiGameCommands.BALL_GAME_INFO}` : `<s>/${EmojiGameCommands.BALL_GAME_INFO}</s>`} ${Emoji.FootballEmoji}, ${Emoji.BasketballEmoji}\n`
             + `  - ${chat.getSetting(Settings.DARTS_GAME_ENABLED) ? `/${EmojiGameCommands.DARTS_INFO}` : `<s>/${EmojiGameCommands.DARTS_INFO}</s>`} ${Emoji.DartEmoji}\n`
+            + `  - ${chat.getSetting(Settings.BOWLING_ENABLED) ? `/${EmojiGameCommands.BOWLING_INFO}` : `<s>/${EmojiGameCommands.BOWLING_INFO}</s>`} ${Emoji.BowlingEmoji}\n`
             + `- /${EmojiGameCommands.JOIN_GAME} 🧑‍🤝‍🧑\n`
             + `- /${EmojiGameCommands.CANCEL_GAME} 🛑\n`
             + `- /${EmojiGameCommands.SET_STAKES} [Stakes] 💵\n\n`

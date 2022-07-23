@@ -16,9 +16,11 @@ export enum GameState {
 }
 
 export abstract class RoundBasedGame extends GameIdentifier {
+    protected round: number = 0;
+    protected tieBreaking: boolean = false;
+    
     private hostId: number = -1;
     private gameState: GameState = GameState.Initiated;
-    private round: number = 0;
     private players: Player[] = [];
     private tiedPlayersCache: Player[] = [];
 
@@ -34,11 +36,11 @@ export abstract class RoundBasedGame extends GameIdentifier {
         return this.hostId;
     }
 
-    constructor(name: string, emoji: string[], maxRounds: number, stakes: number) {
-        super(name, emoji, maxRounds, stakes);
+    constructor(name: string, emoji: string[], maxRounds: number, throwsPerRound: number, stakes: number) {
+        super(name, emoji, maxRounds, throwsPerRound, stakes);
     }
 
-    public abstract GetOutcome(dice: Dice): number;
+    public abstract GetOutcome(dice: Dice, player: Player): number;
 
     public AddPlayer(user: User, chat: Chat): string {
         if (this.hostId === -1) {
@@ -62,12 +64,14 @@ export abstract class RoundBasedGame extends GameIdentifier {
         var player = this.findPlayerById(data.user.id);
         if (player && !player.Disqualified) {
             if (data.msg.dice && this.MatchEmoji(data.msg.dice.emoji)) {
-                let tieBreaking = false;
                 if (this.tiedPlayersCache.length !== 0) {
                     if (this.tiedPlayersCache.findIndex((cachedPlayer) => cachedPlayer.id === player!.id) === -1) 
                         return GameResponse.EmptyResponse(false);
                     else
-                        tieBreaking = true;
+                        this.tieBreaking = true;
+                }
+                else {
+                    this.tieBreaking = false;
                 }
                 if (this.gameState === GameState.Initiated) {
                     if (player.id !== this.hostId)
@@ -78,7 +82,9 @@ export abstract class RoundBasedGame extends GameIdentifier {
                 if (player.RoundsPlayed > this.round)
                     return GameResponse.PlayerError(`Get back to your place in the queue Karen and wait for your turn just like everyone else.`);
                 
-                player.ScorePoints(this.GetOutcome(data.msg.dice), tieBreaking);
+                player.ScorePoints(this.GetOutcome(data.msg.dice, player), this.tieBreaking);
+                if (player.ThrowsThisRound === this.throwsPerRound)
+                    player.RoundTransition();
                 if (this.hasRoundEnded()) {
                     return this.endRound(data.chat);
                 }
@@ -133,6 +139,10 @@ export abstract class RoundBasedGame extends GameIdentifier {
             msg += "\nAll stakes were returned."
         }
         return { message: msg, canceled: true};
+    }
+
+    protected findPlayerById(id: number): Player | undefined {
+        return this.players.find((player) => player.id === id)
     }
 
     private returnStakes(chat: Chat) {
@@ -203,10 +213,6 @@ export abstract class RoundBasedGame extends GameIdentifier {
             if (!ranking[2].Disqualified)
                 chat.alterUserScore(new AlterUserScoreArgs(chat.users.get(ranking[2].id)!, Math.floor(payoutThirdPlace), Plugin.PLUGIN_NAME, `Winnings from ${this.FullName}`));
         }
-    }
-
-    private findPlayerById(id: number): Player | undefined {
-        return this.players.find((player) => player.id === id)
     }
 
     private sortPlayers(): Player[] {
