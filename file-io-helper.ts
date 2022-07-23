@@ -1,20 +1,13 @@
-import * as fs from "fs";
 import { SlotMachineData } from "./games/slot-machine/slot-machine-data";
 
 export class FileIOHelper {
 
-
-    private readonly dtbDataFolder = "./data/";
     private readonly emojiGameDataFolder = "emoji-games/";
     private readonly dataFilename = "slot-machine-data-";
 
     constructor(
         private readonly loadDataFromFile: <T>(fileName: string) => T | null,
-        private readonly saveDataToFile: <T>(fileName: string, data: any) => void) {
-            if (!fs.existsSync(this.dtbDataFolder + this.emojiGameDataFolder)) {
-                fs.mkdirSync(this.dtbDataFolder + this.emojiGameDataFolder);
-            }
-        }
+        private readonly saveDataToFile: <T>(fileName: string, data: any) => void) { }
 
     public PersistSlotMachineData(data: Map<number, SlotMachineData>): void {
         const chatIds = Array.from(data.keys());

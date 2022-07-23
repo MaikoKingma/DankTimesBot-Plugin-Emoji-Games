@@ -7,7 +7,7 @@ import { ChatMessageEventArguments } from "../../src/plugin-host/plugin-events/e
 import { PluginEvent } from "../../src/plugin-host/plugin-events/plugin-event-types";
 import { AbstractPlugin } from "../../src/plugin-host/plugin/plugin";
 import { EmojiGameCommands } from "./emoji-game-commands";
-import { FileIOHelper } from "./FileIOHelper";
+import { FileIOHelper } from "./file-io-helper";
 import { Emoji } from "./games/emoji";
 import { GameHost } from "./games/game-host";
 import { GameRegistry } from "./games/game-registry";
