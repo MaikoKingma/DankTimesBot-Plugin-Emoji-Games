@@ -15,6 +15,9 @@ import { GameTemplate } from "./games/round-based-games/templates/game-template"
 import { SlotMachineData } from "./games/slot-machine/slot-machine-data";
 import { SlotMachineGame } from "./games/slot-machine/slot-machine-game";
 import { Settings } from "./settings";
+import * as ChildProcess from "child_process";
+import * as fs from "fs";
+import * as Path from "path";
 
 export class Plugin extends AbstractPlugin {
 
@@ -27,7 +30,18 @@ export class Plugin extends AbstractPlugin {
     private readonly gameRegistry: GameRegistry = new GameRegistry();
 
     constructor() {
-        super(Plugin.PLUGIN_NAME, "1.1.0");
+        let sha = "n.a.";
+        try {
+            const pluginsDir = Path.resolve("./plugins/");
+            const pluginDir = fs.readdirSync(pluginsDir).find(dir => dir.replace(/[^a-zA-Z ]/, "").toLocaleLowerCase().includes("emojigame"));
+            if (pluginDir)
+            {
+                sha = ChildProcess
+                    .execSync(`git --git-dir "${Path.resolve(pluginsDir, pluginDir, ".git")}" rev-parse --short HEAD`)
+                    .toString().trim();
+            }
+        } catch { }
+        super(Plugin.PLUGIN_NAME, sha);
 
         this.subscribeToPluginEvent(PluginEvent.ChatMessage, this.onChatMessage.bind(this));
         this.subscribeToPluginEvent(PluginEvent.BotShutdown, this.persistData.bind(this));
