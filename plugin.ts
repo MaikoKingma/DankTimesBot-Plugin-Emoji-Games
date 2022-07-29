@@ -36,9 +36,9 @@ export class Plugin extends AbstractPlugin {
             const pluginDir = fs.readdirSync(pluginsDir).find(dir => dir.replace(/[^a-zA-Z ]/, "").toLocaleLowerCase().includes("emojigame"));
             if (pluginDir)
             {
-                sha = ChildProcess
+                sha = "<pre>" + ChildProcess
                     .execSync(`git --git-dir "${Path.resolve(pluginsDir, pluginDir, ".git")}" rev-parse --short HEAD`)
-                    .toString().trim();
+                    .toString().trim() + "</pre>";
             }
         } catch { }
         super(Plugin.PLUGIN_NAME, sha);
