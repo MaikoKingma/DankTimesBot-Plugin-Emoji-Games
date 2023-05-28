@@ -21,6 +21,10 @@ export class SlotMachineGame {
     
     constructor(private data: SlotMachineData = new SlotMachineData()) {}
 
+    public ResetData(): void {
+        this.data = new SlotMachineData();
+    }
+
     public PullLever(value: number, chat: Chat, user: User): GameResponse {
         const player = this.findPlayer(user);
         if (player.Bet > user.score)

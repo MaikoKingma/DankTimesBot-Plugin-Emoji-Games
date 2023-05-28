@@ -24,6 +24,11 @@ export class FileIOHelper {
         return data;
     }
 
+    public ResetSlotMachineData(chatId: number): void {
+        const data = new SlotMachineData();
+        this.saveDataToFile<SlotMachineData>(this.getSlotMachineDataFileName(chatId), data);
+    }
+
     private getSlotMachineDataFileName(chatId: number) {
         return `${this.emojiGameDataFolder}${this.dataFilename}${chatId}.json`;
     }

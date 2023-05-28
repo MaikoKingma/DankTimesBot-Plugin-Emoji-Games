@@ -18,6 +18,7 @@ import { Settings } from "./settings";
 import * as ChildProcess from "child_process";
 import * as fs from "fs";
 import * as Path from "path";
+import { ChatResetEventArguments } from "../../src/plugin-host/plugin-events/event-arguments/chat-reset-event-arguments";
 
 export class Plugin extends AbstractPlugin {
 
@@ -46,6 +47,7 @@ export class Plugin extends AbstractPlugin {
         this.subscribeToPluginEvent(PluginEvent.ChatMessage, this.onChatMessage.bind(this));
         this.subscribeToPluginEvent(PluginEvent.BotShutdown, this.persistData.bind(this));
         this.subscribeToPluginEvent(PluginEvent.HourlyTick, this.persistData.bind(this));
+        this.subscribeToPluginEvent(PluginEvent.ChatReset, this.resetData.bind(this));
     }
 
     /**
@@ -94,6 +96,14 @@ export class Plugin extends AbstractPlugin {
             data.set(chatId, slotMachineData)
         }
         this.fileIOHelper.PersistSlotMachineData(data);
+    }
+
+    private resetData(eventArgs: ChatResetEventArguments): void {
+        let gameHost = this.gameHosts.get(eventArgs.chat.id);
+        if (gameHost) {
+            this.fileIOHelper.ResetSlotMachineData(eventArgs.chat.id);
+            gameHost.ResetSlotMachineData();
+        }
     }
     
     private getGameHost(chatId: number): GameHost {

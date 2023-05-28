@@ -58,6 +58,10 @@ export class GameHost {
         return this.slotMachine.SetBet(user, msg);
     }
 
+    public ResetSlotMachineData(): void {
+        this.slotMachine.ResetData();
+    }
+
     public GetSlotMachineData(): SlotMachineData {
         return this.slotMachine.Data;
     }
